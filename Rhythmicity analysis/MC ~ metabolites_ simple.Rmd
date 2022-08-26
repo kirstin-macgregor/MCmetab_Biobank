@@ -1,0 +1,151 @@
+---
+title: "MC ~ metabolites"
+author: "Kirstin MacGregor"
+date: '2022-08-26'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list= ls())
+library(tidyverse)
+library(lme4)
+library(mgcv)
+library(tidymv)
+```
+
+
+```{r}
+setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Data")
+data <- read.csv("filtered.data_20220627.csv")
+
+data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
+                           age= as.numeric(age),
+                           n_22038_0_0= as.numeric(n_22038_0_0),
+                           n_22039_0_0= as.numeric(n_22039_0_0),
+                           n_22037_0_0= as.numeric(n_22037_0_0),
+                           MET.summed= as.numeric(MET.summed))
+```
+
+#set up loop:
+```{R}
+variables<- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2', 'weight_kg', 'height', 'bmi', 'bodyfat_kg', 'bodyfatfreemass', 'SMusclemasspct_c', 'bodyfat_p', 'n_30800_0_0', 'n_30770_0_0', 'CRP_0', 'n_22038_0_0', 'HbA1c_0', 'n_22039_0_0', 'n_22037_0_0', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
+```
+
+#model 1: simple model
+```{r}
+mod_out_simple <- data.frame(matrix(ncol =22, nrow = 0))
+
+for (i in variables) {
+  data_loop <- rename(data, var= i)
+  mod1 <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=data_loop)
+  summary <- summary(mod1) #summary of model
+  s.summary <- as_tibble(summary$s.table)
+  nval.summary <- as_tibble(summary$n)
+  dev.summary <- as_tibble(summary$dev.expl)
+  MC.summary <- s.summary[1,]
+  full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+  colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+  full.summary <- full.summary %>% mutate(Variable= paste(i))
+  
+  a <- plot_smooths(mod1, series='MC.status')
+  plot.data <- a[[1]]
+  plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  max.val <- max(plot.data$var)
+  min.val <- min(plot.data$var)
+  plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max)
+  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  
+  out<- cbind(full.summary, plot.data)
+  mod_out_simple <- rbind(mod_out_simple, out)
+  
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
+     plot.data.max, plot.data.min, out) }
+
+#write.csv(mod_out_simple, 'MC_metab.csv')
+```
+
+
+#model 2: adjusted for fasting duration
+```{r}
+mod_out_fastingDur <- data.frame(matrix(ncol =22, nrow = 0))
+
+for (i in variables) {
+  data_loop <- rename(data, var= i)
+  mod1 <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex) + s(n_74_0_0), data=data_loop)
+  summary <- summary(mod1) #summary of model
+  s.summary <- as_tibble(summary$s.table)
+  nval.summary <- as_tibble(summary$n)
+  dev.summary <- as_tibble(summary$dev.expl)
+  MC.summary <- s.summary[1,]
+  full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+  colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+  full.summary <- full.summary %>% mutate(Variable= paste(i))
+  
+  a<- plot_smooths(mod1, series='MC.status')
+  plot.data <- a[[1]]
+  plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  max.val <- max(plot.data$var)
+  min.val <- min(plot.data$var)
+  plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max)
+  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  
+  out<- cbind(full.summary, plot.data)
+  mod_out_fastingDur <- rbind(mod_out_fastingDur, out)
+  
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
+     plot.data.max, plot.data.min, out) }
+
+#write.csv(mod_out_fastingDur, 'mod_out_fastingDur.csv')
+```
+
+#3. excluding women with menstrual cycle symptoms
+```{r}
+data.n_21050_0_0 <- data %>% filter(n_21050_0_0 == "-601" | n_21050_0_0 == "-602")
+data.n_21026_0_0 <- data %>% filter(n_21026_0_0 == "1")
+Data.MCsymptoms <- rbind(data.n_21050_0_0, data.n_21026_0_0)
+data_MC <- anti_join(data, Data.MCsymptoms, by = 'eid')
+
+mod_out_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
+
+for (i in variables) {
+  data_loop <- rename(data_MC, var= i)
+  
+  mod1 <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=data_loop)
+  summary <- summary(mod1) #summary of model
+  s.summary <- as_tibble(summary$s.table)
+  nval.summary <- as_tibble(summary$n)
+  dev.summary <- as_tibble(summary$dev.expl)
+  MC.summary <- s.summary[1,]
+  full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+  colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+  full.summary <- full.summary %>% mutate(Variable= paste(i))
+  
+  a <- plot_smooths(mod1, series='MC.status')
+  plot.data <- a[[1]]
+  plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  max.val <- max(plot.data$var)
+  min.val <- min(plot.data$var)
+  plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max)
+  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  
+  out<- cbind(full.summary, plot.data)
+  mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out)
+  
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
+     plot.data.max, plot.data.min, out) }
+
+#write.csv(mod_out_fastingDur, 'mod_out_MCexcluded.csv')
+```
