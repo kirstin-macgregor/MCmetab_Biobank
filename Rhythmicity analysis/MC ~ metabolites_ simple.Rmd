@@ -10,11 +10,12 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-rm(list= ls())
 library(tidyverse)
+library(ggplot2)
 library(lme4)
 library(mgcv)
 library(tidymv)
+rm(list= ls())
 ```
 
 
@@ -54,6 +55,7 @@ for (i in variables) {
   a <- plot_smooths(mod1, series='MC.status')
   plot.data <- a[[1]]
   plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  assign(paste('plot.data_', i, sep=''), plot.data)
   max.val <- max(plot.data$var)
   min.val <- min(plot.data$var)
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
@@ -149,3 +151,11 @@ for (i in variables) {
 
 #write.csv(mod_out_fastingDur, 'mod_out_MCexcluded.csv')
 ```
+
+
+#plots
+``` {r}
+metabolites <- rbind(plot.data_n_30740_0_0, plot.data_TG_0, plot.data_TG_0, plot.data_ldl_0, plot.data_HDL_0, plot.data_tyG.index2)
+```
+
+
