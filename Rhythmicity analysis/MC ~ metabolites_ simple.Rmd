@@ -10,11 +10,20 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+<<<<<<< HEAD
 rm(list= ls())
 library(tidyverse)
 library(lme4)
 library(mgcv)
 library(tidymv)
+=======
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+library(mgcv)
+library(tidymv)
+rm(list= ls())
+>>>>>>> cad88e7bf47930a0bbd705091fa62f782064b2f4
 ```
 
 
