@@ -87,7 +87,7 @@ for (i in metabolite_loop) {
   for (j in mediators_loop) {
   data_loop_2 <- rename(data_loop, covar=j)
     
-  mod1 <- gam(var~ s(covar) + ethnicity_cat + s(age) + s(deprivationindex) + n_74_0_0, data=data_loop_2)
+  mod1 <- gam(var~ s(covar) + ethnicity_cat + s(age) + s(deprivationindex) + s(n_74_0_0), data=data_loop_2)
   summary <- summary(mod1)
   s.summary <- as_tibble(summary$s.table)
   s.summary <- s.summary[1,]
