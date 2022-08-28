@@ -157,7 +157,3 @@ mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out) }  }
 
 #write.csv(mod_out_MCsymptoms, 'metab~mediator_MCexcluded.csv')
 ```
-
-
-
-
