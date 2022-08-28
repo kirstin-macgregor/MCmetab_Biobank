@@ -1,5 +1,5 @@
 ---
-title: "metab ~ potential mediator"
+title: "MC ~ potential mediator"
 author: "Kirstin MacGregor"
 date: '2022-08-26'
 output: html_document
@@ -15,6 +15,8 @@ library(ggplot2)
 library(lme4)
 library(mgcv)
 library(tidymv)
+library(viridis)
+library(ggpubr)
 rm(list= ls())
 ```
 
@@ -33,7 +35,6 @@ data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
 
 #variables for loop
 ```{r}
-variables_loop<- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2')
 mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
 ```
 
@@ -42,13 +43,10 @@ mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_
 ```{r}
 mod_out_simple <- data.frame(matrix(ncol =22, nrow = 0))
 
-for (i in variables_loop) {
+for (i in mediators_loop) {
   data_loop <- rename(data, var= i)
   
-  for (j in mediators_loop){
-  data_loop_covar <- rename(data_loop, covar= j)  
-  
-  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex) + s(covar), data=data_loop_covar)
+  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=data_loop)
   summary <- summary(mod1) #summary of model
   s.summary <- as_tibble(summary$s.table)
   nval.summary <- as_tibble(summary$n)
@@ -56,11 +54,13 @@ for (i in variables_loop) {
   MC.summary <- s.summary[1,]
   full.summary <- cbind(nval.summary, dev.summary, MC.summary)
   colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
-  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), inflam=paste(j))
+  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i))
   
   a <- plot_smooths(model= mod1, series= MC.status)
   plot.data <- a[['data']]
   plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  plot.data <- mutate(plot.data, mediator= paste(i))
+  assign(paste('plot.data_', i, sep=''), plot.data)
   max.val <- max(plot.data$var)
   min.val <- min(plot.data$var)
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
@@ -70,7 +70,10 @@ for (i in variables_loop) {
                             'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
   out<- cbind(full.summary, plot.data)
   
-mod_out <- rbind(mod_out_simple, out) }  }
+  mod_out <- rbind(mod_out_simple, out) 
+  
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
+     plot.data.max, plot.data.min, out) }
 
 #write.csv(mod_out_simple, 'metab~mediator_simple.csv')
 ```
@@ -80,13 +83,10 @@ mod_out <- rbind(mod_out_simple, out) }  }
 ```{r}
 mod_out_fasted <- data.frame(matrix(ncol =22, nrow = 0))
 
-for (i in variables_loop) {
-  data_loop <- rename(data, var= i)
-  
-  for (j in mediators_loop){
-  data_loop_covar <- rename(data_loop, covar= j)  
-  
-  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex) + s(covar), data=data_loop_covar)
+for (i in mediators_loop) {
+  data_loop <- rename(data, mediator= i)
+
+  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=data_loop)
   summary <- summary(mod1) #summary of model
   s.summary <- as_tibble(summary$s.table)
   nval.summary <- as_tibble(summary$n)
@@ -94,7 +94,7 @@ for (i in variables_loop) {
   MC.summary <- s.summary[1,]
   full.summary <- cbind(nval.summary, dev.summary, MC.summary)
   colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
-  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), inflam=paste(j))
+  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i))
   
   a <- plot_smooths(model= mod1, series= MC.status)
   plot.data <- a[['data']]
@@ -108,7 +108,10 @@ for (i in variables_loop) {
                             'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
   out<- cbind(full.summary, plot.data)
   
-mod_out_fasted <- rbind(mod_out_fasted, out) }  }
+  mod_out_fasted <- rbind(mod_out_fasted, out) 
+  
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
+     plot.data.max, plot.data.min, out) }
 
 #write.csv(mod_out_fasted, 'metab~mediator_fastedDur.csv')
 ```
@@ -123,15 +126,10 @@ data_MC <- anti_join(data, Data.MCsymptoms, by = 'eid')
 
 mod_out_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
 
-mod_out <- data.frame(matrix(ncol =22, nrow = 0))
-
-for (i in variables_loop) {
-  data_loop <- rename(data_MC, var= i)
+for (i in mediators_loop) {
+  data_loop <- rename(data, var= i)
   
-  for (j in mediators_loop){
-  data_loop_covar <- rename(data_loop, covar= j)  
-  
-  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex) + s(covar), data=data_loop_covar)
+  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=data_loop)
   summary <- summary(mod1) #summary of model
   s.summary <- as_tibble(summary$s.table)
   nval.summary <- as_tibble(summary$n)
@@ -139,7 +137,7 @@ for (i in variables_loop) {
   MC.summary <- s.summary[1,]
   full.summary <- cbind(nval.summary, dev.summary, MC.summary)
   colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
-  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), inflam=paste(j))
+  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i))
   
   a <- plot_smooths(model= mod1, series= MC.status)
   plot.data <- a[['data']]
@@ -153,7 +151,54 @@ for (i in variables_loop) {
                             'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
   out<- cbind(full.summary, plot.data)
   
-mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out) }  }
+  mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out)
+
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
+     plot.data.max, plot.data.min, out) }  }
 
 #write.csv(mod_out_MCsymptoms, 'metab~mediator_MCexcluded.csv')
+```
+
+
+```{r}
+
+plot.data.pChars <- rbind(plot.data_bmi, plot.data_bodyfat_p, plot.data_SMusclemasspct_c, plot.data_MET.summed, plot.data_Fitness_METs_c,
+                          plot.data_handgripkg)
+plot.data.pChars <- plot.data.pChars %>%  mutate(mediator = replace(mediator, mediator=="bmi", "BMI (kg/m2)"),
+                                            mediator = replace(mediator, mediator=="bodyfat_p", "Fat mass (%)"),
+                                            mediator = replace(mediator, mediator=="SMusclemasspct_c", "Fat free mass (%)"),
+                                            mediator = replace(mediator, mediator=="MET.summed", "Summed physical activity (MET min/ wk)"),
+                                            mediator = replace(mediator, mediator=="Fitness_METs_c", "Cardiorespiratory fitness (METs)"),
+                                            mediator = replace(mediator, mediator=="handgripkg", "Handgrip strength (kg)"))
+
+plot.data.inflam <- rbind(plot.data_CRP_0, plot.data_n_30800_0_0)
+plot.data.inflam <- plot.data.inflam %>%  mutate(mediator = replace(mediator, mediator=="CRP_0", "CRP (mg/L"),
+                                                 mediator = replace(mediator, mediator=="n_30800_0_0", "IGF-1 (mmol/L"))                  
+
+plot.pChars <- ggplot(data =plot.data.pChars)+
+  geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=MC.status))+
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.title.x =element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~ mediator,scales= 'free', ncol=2)
+
+plot.inflam <- ggplot(data =plot.data.inflam)+
+  geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=MC.status))+
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.title.x =element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~ mediator,scales= 'free', ncol=2, nrow=3)
+
 ```
