@@ -34,23 +34,78 @@ data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
 #variables for loop
 ```{r}
 variables_loop<- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2')
+mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
 ```
 
 
 #inflamatory markers
 ```{r}
-mod_out <- data.frame(matrix(ncol =23, nrow = 0))
-inflam_loop <- c('CRP_0', 'n_30800_0_0')
+mod_out_simple <- data.frame(matrix(ncol =22, nrow = 0))
 
 for (i in variables_loop) {
   
   data_loop <- rename(data, var= i)
   
-  for (j in inflam_loop){
+  for (j in mediators_loop){
     
-  data_loop <- rename(data_loop, covar= j)  
+  data_loop_covar <- rename(data_loop, covar= j)  
   
-  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex) + s(covar), data=data_loop)
+  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex) + s(covar), data=data_loop_covar)
+  summary <- summary(mod1) #summary of model
+  s.summary <- as_tibble(summary$s.table)
+  nval.summary <- as_tibble(summary$n)
+  dev.summary <- as_tibble(summary$dev.expl)
+  MC.summary <- s.summary[1,]
+  full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+  colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), inflam=paste(j))
+  
+  a <- plot_smooths(model= mod1, series= MC.status)
+  plot.data <- a[['data']]
+  plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  max.val <- max(plot.data$var)
+  min.val <- min(plot.data$var)
+  plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max)
+  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  out<- cbind(full.summary, plot.data)
+  
+mod_out <- rbind(mod_out_simple, out) }  }
+
+#getwd()
+#write.csv(mod_out_simple, 'metab~mediator_simple.csv')
+
+```
+
+
+
+
+
+
+
+
+#3. excluding women with menstrual cycle symptoms
+```{r}
+data.n_21050_0_0 <- data %>% filter(n_21050_0_0 == "-601" | n_21050_0_0 == "-602")
+data.n_21026_0_0 <- data %>% filter(n_21026_0_0 == "1")
+Data.MCsymptoms <- rbind(data.n_21050_0_0, data.n_21026_0_0)
+data_MC <- anti_join(data, Data.MCsymptoms, by = 'eid')
+
+mod_out_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
+
+mod_out <- data.frame(matrix(ncol =22, nrow = 0))
+
+for (i in variables_loop) {
+  
+  data_loop <- rename(data, var= i)
+  
+  for (j in mediators_loop){
+    
+  data_loop_covar <- rename(data_loop, covar= j)  
+  
+  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex) + s(covar), data=data_loop_covar)
   summary <- summary(mod1) #summary of model
   s.summary <- as_tibble(summary$s.table)
   nval.summary <- as_tibble(summary$n)
@@ -74,8 +129,5 @@ for (i in variables_loop) {
   
 mod_out <- rbind(mod_out, out) }  }
 
-
 #getwd()
-#write.csv(mod_out, 'inflamCovarAdj_MC_metab.csv')
-
-```
+#write.csv(mod_out, 'inflamCovarAdj_MC_metab_MCexcluded.csv')
