@@ -36,6 +36,7 @@ data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
 #variables for loop
 ```{r}
 mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
+mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
 ```
 
 
@@ -46,7 +47,7 @@ mod_out_simple <- data.frame(matrix(ncol =22, nrow = 0))
 for (i in mediators_loop) {
   data_loop <- rename(data, var= i)
   
-  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=data_loop)
+  mod1 <- gam(var~  s(MC.status, bs="cc") + ethnicity_cat + s(age) + s(deprivationindex), data=data_loop)
   summary <- summary(mod1) #summary of model
   s.summary <- as_tibble(summary$s.table)
   nval.summary <- as_tibble(summary$n)
@@ -86,7 +87,7 @@ mod_out_fasted <- data.frame(matrix(ncol =22, nrow = 0))
 for (i in mediators_loop) {
   data_loop <- rename(data, mediator= i)
 
-  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=data_loop)
+  mod1 <- gam(var~  s(MC.status, bs="cc") + ethnicity_cat + s(age) + s(deprivationindex), data=data_loop)
   summary <- summary(mod1) #summary of model
   s.summary <- as_tibble(summary$s.table)
   nval.summary <- as_tibble(summary$n)
@@ -129,7 +130,7 @@ mod_out_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
 for (i in mediators_loop) {
   data_loop <- rename(data, var= i)
   
-  mod1 <- gam(var~  ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=data_loop)
+  mod1 <- gam(var~  s(MC.status, bs="cc") + ethnicity_cat + s(age) + s(deprivationindex), data=data_loop)
   summary <- summary(mod1) #summary of model
   s.summary <- as_tibble(summary$s.table)
   nval.summary <- as_tibble(summary$n)

@@ -1,0 +1,52 @@
+---
+title: "MC ~ metabolite + mediator"
+author: "Kirstin MacGregor"
+date: '2022-08-26'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+library(mgcv)
+library(tidymv)
+library(viridis)
+library(ggpubr)
+rm(list= ls())
+```
+
+#set up data and arange
+```{r}
+setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Data")
+data <- read.csv("filtered.data_20220627.csv")
+
+data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
+                           age= as.numeric(age),
+                           n_22038_0_0= as.numeric(n_22038_0_0),
+                           n_22039_0_0= as.numeric(n_22039_0_0),
+                           n_22037_0_0= as.numeric(n_22037_0_0),
+                           MET.summed= as.numeric(MET.summed))
+
+#top 1 % of values for inflam
+top1perc.CRP <- quantile(data$CRP_0, .99, na.rm=TRUE)
+top1perc.IGF <- quantile(data$n_30770_0_0, .99, na.rm=TRUE)
+
+#exclude top 1 % of predictor values
+data.excl <- data %>% filter(CRP_0 <= top1perc.CRP,
+                         n_30770_0_0 <= top1perc.IGF)
+
+
+```
+
+#variables for loop
+```{r}
+metabolite_loop <- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2')
+mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
+```
+
