@@ -1,0 +1,138 @@
+---
+title: "metabolites ~ mediator"
+author: "Kirstin MacGregor"
+date: '2022-08-26'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(lme4)
+library(mgcv)
+library(tidymv)
+library(viridis)
+library(ggpubr)
+rm(list= ls())
+```
+
+#set up data and arange
+```{r}
+setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Data")
+data <- read.csv("filtered.data_20220627.csv")
+
+data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
+                           age= as.numeric(age),
+                           n_22038_0_0= as.numeric(n_22038_0_0),
+                           n_22039_0_0= as.numeric(n_22039_0_0),
+                           n_22037_0_0= as.numeric(n_22037_0_0),
+                           MET.summed= as.numeric(MET.summed))
+
+#top 1 % of values for inflam
+top1perc.CRP <- quantile(data$CRP_0, .99, na.rm=TRUE)
+top1perc.IGF <- quantile(data$n_30770_0_0, .99, na.rm=TRUE)
+
+#exclude top 1 % of predictor values
+data.excl <- data %>% filter(CRP_0 <= top1perc.CRP,
+                         n_30770_0_0 <= top1perc.IGF)
+
+
+```
+
+#variables for loop
+```{r}
+metabolite_loop <- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2')
+mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
+```
+
+
+# Simple model
+```{r}
+mod_out_simple <- data.frame(matrix(ncol =9, nrow = 0))
+
+for (i in metabolite_loop) {
+  data_loop <- rename(data, var= i)
+  
+  for (j in mediators_loop) {
+  data_loop_2 <- rename(data_loop, covar=j)
+    
+  mod1 <- gam(var~ s(covar) + ethnicity_cat + s(age) + s(deprivationindex), data=data_loop_2)
+  summary <- summary(mod1)
+  s.summary <- as_tibble(summary$s.table)
+  s.summary <- s.summary[1,]
+  dev.summary <- as_tibble(summary$dev.expl)
+  n.summary <- as_tibble(summary$n)
+  dev.summary <- dev.summary %>% mutate(OutcomeVar= paste(i), PredictVar= paste(j))
+  out <- cbind(n.summary, s.summary, dev.summary)
+  
+  mod_out_simple <- rbind(mod_out_simple, out)
+  
+  rm(mod1, summary, s.summary, n.summary, dev.summary, out) } }
+
+#write.csv(mod_out_simple, 'metab~mediator_simple.csv')
+```
+
+
+#2. Fasting duration adjusted
+```{r}
+mod_out_fasted <- data.frame(matrix(ncol =9, nrow = 0))
+
+for (i in metabolite_loop) {
+  data_loop <- rename(data, var= i)
+  
+  for (j in mediators_loop) {
+  data_loop_2 <- rename(data_loop, covar=j)
+    
+  mod1 <- gam(var~ s(covar) + ethnicity_cat + s(age) + s(deprivationindex) + n_74_0_0, data=data_loop_2)
+  summary <- summary(mod1)
+  s.summary <- as_tibble(summary$s.table)
+  s.summary <- s.summary[1,]
+  dev.summary <- as_tibble(summary$dev.expl)
+  n.summary <- as_tibble(summary$n)
+  dev.summary <- dev.summary %>% mutate(OutcomeVar= paste(i), PredictVar= paste(j))
+  out <- cbind(n.summary, s.summary, dev.summary)
+  
+  mod_out_fasted <- rbind(mod_out_fasted, out)
+  
+  rm(mod1, summary, s.summary, n.summary, dev.summary, out) } }
+
+
+#write.csv(mod_out_fasted, 'metab~mediator_fastedDur.csv')
+```
+
+
+#3. excluding women with menstrual cycle symptoms
+```{r}
+data.n_21050_0_0 <- data %>% filter(n_21050_0_0 == "-601" | n_21050_0_0 == "-602")
+data.n_21026_0_0 <- data %>% filter(n_21026_0_0 == "1")
+Data.MCsymptoms <- rbind(data.n_21050_0_0, data.n_21026_0_0)
+data_MC <- anti_join(data, Data.MCsymptoms, by = 'eid')
+
+mod_out_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
+
+
+for (i in metabolite_loop) {
+  data_loop <- rename(data_MC, var= i)
+  
+  for (j in mediators_loop) {
+  data_loop_2 <- rename(data_loop, covar=j)
+    
+  mod1 <- gam(var~ s(covar) + ethnicity_cat + s(age) + s(deprivationindex), data=data_loop_2)
+  summary <- summary(mod1)
+  s.summary <- as_tibble(summary$s.table)
+  s.summary <- s.summary[1,]
+  dev.summary <- as_tibble(summary$dev.expl)
+  n.summary <- as_tibble(summary$n)
+  dev.summary <- dev.summary %>% mutate(OutcomeVar= paste(i), PredictVar= paste(j))
+  out <- cbind(n.summary, s.summary, dev.summary)
+  
+  mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out)
+  
+  rm(mod1, summary, s.summary, n.summary, dev.summary, out) } }
+
+#write.csv(mod_out_MCsymptoms, 'metab~mediator_MCexcluded.csv')
+```
