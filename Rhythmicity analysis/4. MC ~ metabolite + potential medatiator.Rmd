@@ -32,21 +32,134 @@ data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
                            n_22039_0_0= as.numeric(n_22039_0_0),
                            n_22037_0_0= as.numeric(n_22037_0_0),
                            MET.summed= as.numeric(MET.summed))
-
-#top 1 % of values for inflam
-top1perc.CRP <- quantile(data$CRP_0, .99, na.rm=TRUE)
-top1perc.IGF <- quantile(data$n_30770_0_0, .99, na.rm=TRUE)
-
-#exclude top 1 % of predictor values
-data.excl <- data %>% filter(CRP_0 <= top1perc.CRP,
-                         n_30770_0_0 <= top1perc.IGF)
-
-
 ```
 
 #variables for loop
 ```{r}
 metabolite_loop <- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2')
-mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
+mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
 ```
 
+# Simple model
+```{r}
+mod_out_simple <- data.frame(matrix(ncol =22, nrow = 0))
+
+for (i in metabolite_loop) {
+  data_loop <- rename(data, var= i)
+  
+  for (j in mediators_loop) {
+  data_loop_2 <- rename(data_loop, covar=j)
+  
+  mod1 <- gam(var~  s(MC.status, bs="cc") + ethnicity_cat + s(age) + s(deprivationindex) + s(covar), data=data_loop_2)
+  summary <- summary(mod1) #summary of model
+  s.summary <- as_tibble(summary$s.table)
+  nval.summary <- as_tibble(summary$n)
+  dev.summary <- as_tibble(summary$dev.expl)
+  MC.summary <- s.summary[1,]
+  full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+  colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), mediator = paste(j))
+  
+  a <- plot_smooths(model= mod1, series= MC.status)
+  plot.data <- a[['data']]
+  plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  max.val <- max(plot.data$var)
+  min.val <- min(plot.data$var)
+  plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max)
+  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  out<- cbind(full.summary, plot.data)
+  
+  mod_out_simple <- rbind(mod_out_simple, out) 
+  
+  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out) } }
+
+#write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_simple.csv')
+```
+
+
+#2. Fasting duration adjusted
+```{r}
+mod_out_fasted <- data.frame(matrix(ncol =22, nrow = 0))
+
+for (i in metabolite_loop) {
+  data_loop <- rename(data, var= i)
+  
+  for (j in mediators_loop) {
+  data_loop_2 <- rename(data_loop, covar=j)
+  
+  mod1 <- gam(var~  s(MC.status, bs="cc") + ethnicity_cat + s(age) + s(deprivationindex) + s(covar) + s(n_74_0_0), data=data_loop_2)
+  summary <- summary(mod1) #summary of model
+  s.summary <- as_tibble(summary$s.table)
+  nval.summary <- as_tibble(summary$n)
+  dev.summary <- as_tibble(summary$dev.expl)
+  MC.summary <- s.summary[1,]
+  full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+  colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), mediator = paste(j))
+  
+  a <- plot_smooths(model= mod1, series= MC.status)
+  plot.data <- a[['data']]
+  plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  max.val <- max(plot.data$var)
+  min.val <- min(plot.data$var)
+  plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max)
+  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  out<- cbind(full.summary, plot.data)
+  
+  mod_out_fasted <- rbind(mod_out_fasted, out) 
+  
+  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out) } }
+
+#write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_fastingDur.csv')
+```
+
+
+#3. excluding women with menstrual cycle symptoms
+```{r}
+data.n_21050_0_0 <- data %>% filter(n_21050_0_0 == "-601" | n_21050_0_0 == "-602")
+data.n_21026_0_0 <- data %>% filter(n_21026_0_0 == "1")
+Data.MCsymptoms <- rbind(data.n_21050_0_0, data.n_21026_0_0)
+data_MC <- anti_join(data, Data.MCsymptoms, by = 'eid')
+
+mod_out_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
+
+for (i in metabolite_loop) {
+  data_loop <- rename(data_MC, var= i)
+  
+  for (j in mediators_loop) {
+  data_loop_2 <- rename(data_loop, covar=j)
+  
+  mod1 <- gam(var~  s(MC.status, bs="cc") + ethnicity_cat + s(age) + s(deprivationindex) + s(covar), data=data_loop_2)
+  summary <- summary(mod1) #summary of model
+  s.summary <- as_tibble(summary$s.table)
+  nval.summary <- as_tibble(summary$n)
+  dev.summary <- as_tibble(summary$dev.expl)
+  MC.summary <- s.summary[1,]
+  full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+  colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+  full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), mediator = paste(j))
+  
+  a <- plot_smooths(model= mod1, series= MC.status)
+  plot.data <- a[['data']]
+  plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  max.val <- max(plot.data$var)
+  min.val <- min(plot.data$var)
+  plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max)
+  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  out<- cbind(full.summary, plot.data)
+  
+  mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out) 
+  
+  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out) } }
+
+#write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_MCexcluded.csv')
+```
