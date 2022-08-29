@@ -49,6 +49,7 @@ cats_3 <- c('0', '1', '2')
 ```{r}
 mod_out_subgroup <- data.frame(matrix(ncol =22, nrow = 0))
 interaction_loop <- list()
+interaction_names <- c()
 
 #for all sub-groups except from IPAQ
 for (i in metabolite_loop) {
@@ -73,6 +74,7 @@ for (i in metabolite_loop) {
     temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "subGroup" = j))
     names(temp_loop)[1] <- paste(i, j, sep='_')
     interaction_loop<- append(interaction_loop, temp_loop)
+    interaction_names <- append(interaction_names, paste(i, j, sep='_'))
     
     for (n in cats_4) {
       plot.data_out_simple <- data.frame(matrix(ncol =16, nrow = 0))
@@ -118,7 +120,8 @@ for (i in metabolite_loop) {
     mod.simple <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=dat_loop_comp) 
     temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "subGroup" = j))
     names(temp_loop)[1] <- paste(i, j, sep='_')
-     interaction_loop<- append(interaction_loop, temp_loop)
+    interaction_loop<- append(interaction_loop, temp_loop)
+    interaction_names <- append(interaction_names, paste(i, j, sep='_'))
     
     for (n in cats_3) {
       plot.data_out_simple <- data.frame(matrix(ncol =16, nrow = 0))
@@ -151,19 +154,18 @@ interaction_fun <- function(x) { anova(x$mod1, x$mod2, test='F') }
 
 interaction_out <- lapply(interaction_loop, interaction_fun)
 
-interaction_out$  
-
 #unlist interaction test output
-interaction_out <- data.frame(matrix(ncol =8, nrow = 0))
-col_names <- c('rain.pVal', 'rain.phase', 'rain.peak.shape', 'rain.period')
-for (i in data_conditions) {
-  out <-as.data.frame(rain_out[i])
-  colnames(out) <- col_names
-  out <- out %>% mutate(condition = paste(i), rain.padj = p.adjust(out$rain.pVal, method = 'BH', n = length(out$rain.pVal))) %>% 
-    separate(condition, c('disease', 'treatment')) %>% rownames_to_column('site') %>%
-    select('site', 'disease', 'treatment', 'rain.pVal', 'rain.padj', 'rain.phase', 'rain.peak.shape', 'rain.period')
-  rain_out_combined <- rbind(rain_out_combined, out)
+interaction_dat_out <- setNames(data.frame(matrix(ncol =4, nrow = 0)), c('Fval', 'Pval', 'condition'))
+
+for (i in interaction_names) {
+  temp <- interaction_out[[i]]
+  F <- temp$F
+  pval <- temp$`Pr(>F)`
+  out <- cbind(F, pval)
+  out <- out[2,]
+  out <- out %>% as.data.frame() %>% t()
+  out <- out %>% as.data.frame() %>% mutate(condition = paste(i))
+  interaction_dat_out <- rbind(interaction_dat_out, out)
   rm(out) } 
 
-rm(rain_out, col_names, i, rain_fun)
 ```
