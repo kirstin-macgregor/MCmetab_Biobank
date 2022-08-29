@@ -7,7 +7,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -38,11 +37,16 @@ data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
 ```{r}
 metabolite_loop <- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2')
 mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
+
+interaction_fun <- function(x) { anova(x$mod1, x$mod2, test='F') }
 ```
 
 # Simple model
 ```{r}
 mod_out_simple <- data.frame(matrix(ncol =22, nrow = 0))
+interaction_loop <- list()
+interaction_names <- c()
+interaction_out_simple <- setNames(data.frame(matrix(ncol =3, nrow = 0)), c('Fval', 'Pval', 'condition'))
 
 for (i in metabolite_loop) {
   data_loop <- rename(data, var= i)
@@ -60,6 +64,14 @@ for (i in metabolite_loop) {
   colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
   full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), mediator = paste(j))
   
+  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+  dat_loop_comp <- data_loop_2 %>% drop_na(covar)
+  mod.simple <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=dat_loop_comp) 
+  temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "covar" = j))
+  names(temp_loop)[1] <- paste(i, j, sep='_')
+  interaction_loop<- append(interaction_loop, temp_loop)
+  interaction_names <- append(interaction_names, paste(i, j, sep='_'))
+  
   a <- plot_smooths(model= mod1, series= MC.status)
   plot.data <- a[['data']]
   plot.data <- plot.data %>% filter(ethnicity_cat== 1)
@@ -68,13 +80,35 @@ for (i in metabolite_loop) {
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
   plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
   plot.data <- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  colnames(plot.data) <- c( 'min.idx', 'min.ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'max.idx', 'max.ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower')
   out<- cbind(full.summary, plot.data)
   
-  mod_out_simple <- rbind(mod_out_simple, out) 
+  mod_out_simple <- rbind(mod_out_simple, out)
   
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out) } }
+  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out,
+     temp_loop) }  }
+
+#interaction test output
+  interaction_out <- lapply(interaction_loop, interaction_fun)
+  
+  for (i in interaction_names) {
+    temp <- interaction_out[[i]]
+    F <- temp$F
+    pval <- temp$`Pr(>F)`
+    out <- cbind(F, pval)
+    out <- out[2,]
+    out <- out %>% as.data.frame() %>% t()
+    out <- out %>% as.data.frame() %>% mutate(Condition = paste(i)) %>% rename(interaction.F= F, interaction.pValue = pval)
+    interaction_out_simple <- rbind(interaction_out_simple, out)
+    rm(out, pval, F, temp) } 
+
+mod_out_simple <- mod_out_simple %>% mutate(Condition= paste(Variable, mediator, sep='_')) %>% 
+  left_join(interaction_out_simple, by= 'Condition') %>%
+  select(-c('min.idx', 'min.ethnicity', 'min.SE', 'min.CI_lower', 'min.CI_upper', 
+            'max.idx', 'max.ethnicity', 'max.SE', 'max.CI_lower', 'max.CI_upper', 'Condition'))
+
+rm(interaction_out_simple, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
 
 #write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_simple.csv')
 ```
@@ -83,6 +117,9 @@ for (i in metabolite_loop) {
 #2. Fasting duration adjusted
 ```{r}
 mod_out_fasted <- data.frame(matrix(ncol =22, nrow = 0))
+interaction_loop <- list()
+interaction_names <- c()
+interaction_out_fasted <- setNames(data.frame(matrix(ncol =3, nrow = 0)), c('Fval', 'Pval', 'condition'))
 
 for (i in metabolite_loop) {
   data_loop <- rename(data, var= i)
@@ -99,7 +136,15 @@ for (i in metabolite_loop) {
   full.summary <- cbind(nval.summary, dev.summary, MC.summary)
   colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
   full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), mediator = paste(j))
-  
+
+  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+  dat_loop_comp <- data_loop_2 %>% drop_na(covar)
+  mod.simple <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=dat_loop_comp) 
+  temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "covar" = j))
+  names(temp_loop)[1] <- paste(i, j, sep='_')
+  interaction_loop<- append(interaction_loop, temp_loop)
+  interaction_names <- append(interaction_names, paste(i, j, sep='_'))
+    
   a <- plot_smooths(model= mod1, series= MC.status)
   plot.data <- a[['data']]
   plot.data <- plot.data %>% filter(ethnicity_cat== 1)
@@ -108,13 +153,34 @@ for (i in metabolite_loop) {
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
   plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
   plot.data <- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  colnames(plot.data) <- c( 'min.idx', 'min.ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'max.idx', 'max.ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower')
   out<- cbind(full.summary, plot.data)
   
   mod_out_fasted <- rbind(mod_out_fasted, out) 
   
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out) } }
+  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out, temp_loop) } }
+
+#interaction test output
+  interaction_out <- lapply(interaction_loop, interaction_fun)
+  
+  for (i in interaction_names) {
+    temp <- interaction_out[[i]]
+    F <- temp$F
+    pval <- temp$`Pr(>F)`
+    out <- cbind(F, pval)
+    out <- out[2,]
+    out <- out %>% as.data.frame() %>% t()
+    out <- out %>% as.data.frame() %>% mutate(Condition = paste(i)) %>% rename(interaction.F= F, interaction.pValue = pval)
+    interaction_out_fasted <- rbind(interaction_out_fasted, out)
+    rm(out, pval, F, temp) } 
+
+mod_out_fasted <- mod_out_fasted %>% mutate(Condition= paste(Variable, mediator, sep='_')) %>% 
+  left_join(interaction_out_fasted, by= 'Condition') %>%
+  select(-c('min.idx', 'min.ethnicity', 'min.SE', 'min.CI_lower', 'min.CI_upper', 
+            'max.idx', 'max.ethnicity', 'max.SE', 'max.CI_lower', 'max.CI_upper', 'Condition'))
+
+rm(interaction_out_fasted, temp, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
 
 #write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_fastingDur.csv')
 ```
@@ -126,8 +192,13 @@ data.n_21050_0_0 <- data %>% filter(n_21050_0_0 == "-601" | n_21050_0_0 == "-602
 data.n_21026_0_0 <- data %>% filter(n_21026_0_0 == "1")
 Data.MCsymptoms <- rbind(data.n_21050_0_0, data.n_21026_0_0)
 data_MC <- anti_join(data, Data.MCsymptoms, by = 'eid')
+rm(data.n_21050_0_0, data.n_21026_0_0, Data.MCsymptoms)
 
 mod_out_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
+
+interaction_loop <- list()
+interaction_names <- c()
+interaction_out_MC <- setNames(data.frame(matrix(ncol =3, nrow = 0)), c('Fval', 'Pval', 'condition'))
 
 for (i in metabolite_loop) {
   data_loop <- rename(data_MC, var= i)
@@ -144,6 +215,14 @@ for (i in metabolite_loop) {
   full.summary <- cbind(nval.summary, dev.summary, MC.summary)
   colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
   full.summary <- full.summary %>% dplyr::mutate(Variable= paste(i), mediator = paste(j))
+
+  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+  dat_loop_comp <- data_loop_2 %>% drop_na(covar)
+  mod.simple <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=dat_loop_comp) 
+  temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "covar" = j))
+  names(temp_loop)[1] <- paste(i, j, sep='_')
+  interaction_loop<- append(interaction_loop, temp_loop)
+  interaction_names <- append(interaction_names, paste(i, j, sep='_'))
   
   a <- plot_smooths(model= mod1, series= MC.status)
   plot.data <- a[['data']]
@@ -153,13 +232,34 @@ for (i in metabolite_loop) {
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
   plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
   plot.data <- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  colnames(plot.data) <- c( 'min.idx', 'min.ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                            'max.idx', 'max.ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower')
   out<- cbind(full.summary, plot.data)
   
   mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out) 
   
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out) } }
+  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out, temp_loop) } }
+
+#interaction test output
+  interaction_out <- lapply(interaction_loop, interaction_fun)
+  
+  for (i in interaction_names) {
+    temp <- interaction_out[[i]]
+    F <- temp$F
+    pval <- temp$`Pr(>F)`
+    out <- cbind(F, pval)
+    out <- out[2,]
+    out <- out %>% as.data.frame() %>% t()
+    out <- out %>% as.data.frame() %>% mutate(Condition = paste(i)) %>% rename(interaction.F= F, interaction.pValue = pval)
+    interaction_out_MC <- rbind(interaction_out_MC, out)
+    rm(out, pval, F, temp, out) } 
+
+mod_out_MCsymptoms <- mod_out_MCsymptoms %>% mutate(Condition= paste(Variable, mediator, sep='_')) %>% 
+  left_join(interaction_out_MC, by= 'Condition') %>%
+  select(-c('min.idx', 'min.ethnicity', 'min.SE', 'min.CI_lower', 'min.CI_upper', 
+            'max.idx', 'max.ethnicity', 'max.SE', 'max.CI_lower', 'max.CI_upper', 'Condition'))
+
+rm(interaction_out_MC, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
 
 #write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_MCexcluded.csv')
 ```
