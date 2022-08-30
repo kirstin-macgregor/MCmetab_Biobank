@@ -50,6 +50,7 @@ cats_3 <- c('0', '1', '2')
 mod_out_subgroup <- data.frame(matrix(ncol =22, nrow = 0))
 interaction_loop <- list()
 interaction_names <- c()
+plot.data.all <- data.frame(matrix(ncol =7, nrow = 0))
 
 #for all sub-groups except from IPAQ
 for (i in metabolite_loop) {
@@ -81,16 +82,18 @@ for (i in metabolite_loop) {
       a <- plot_smooths(model=mod1,series=MC.status)
       plot.data <- a[['data']]
       plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+      plot.data <- plot.data %>% mutate(Variable= paste(i), SubGroup=paste(j))%>%  select(-c('.idx', 'ethnicity_cat', 'SE'))
       cat <- plot.data %>% filter(subgroupVar==n)
       max.val <- max(cat$var)
       min.val <- min(cat$var)
       plot.data.min <- cat %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
       plot.data.max <- cat %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
       plot.data.cat <- cbind(plot.data.min, plot.data.max)
-      colnames(plot.data.cat) <- c('min.idx', 'Level', 'ethnicity_Level', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                                   'max.idx', 'Level', 'ethnicity_Level', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+      colnames(plot.data.cat) <- c('min.idx', 'min.Level', 'min.ethnicity_Level', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                                   'max.idx', 'max.Level', 'max.ethnicity_Level', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower')
       plot.data_out_simple <- rbind(plot.data_out_simple, plot.data.cat) 
-      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a) }
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)
+      plot.data.all <- rbind(plot.data.all, plot.data) }
     
     out <-cbind(full.summary, plot.data_out_simple)
     mod_out_subgroup <- rbind(mod_out_subgroup, out)
@@ -134,8 +137,8 @@ for (i in metabolite_loop) {
       plot.data.min <- cat %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
       plot.data.max <- cat %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
       plot.data.cat <- cbind(plot.data.min, plot.data.max)
-      colnames(plot.data.cat) <- c('min.idx', 'Level', 'ethnicity_Level', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                                   'max.idx', 'Level', 'ethnicity_Level', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+      colnames(plot.data.cat) <- c('min.idx', 'min.Level', 'min.ethnicity_Level', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                                   'max.idx', 'max.Level', 'max.ethnicity_Level', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower')
       plot.data_out_simple <- rbind(plot.data_out_simple, plot.data.cat) 
       rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a) }
     
@@ -145,11 +148,7 @@ for (i in metabolite_loop) {
     rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
        temp_loop, mod.simple, dev.summary) } }
 
-rm(data_loop)
-```
-  
-#interaction tests
-```{r}
+#interaction testing
 interaction_fun <- function(x) { anova(x$mod1, x$mod2, test='F') }
 
 interaction_out <- lapply(interaction_loop, interaction_fun)
@@ -164,8 +163,157 @@ for (i in interaction_names) {
   out <- cbind(F, pval)
   out <- out[2,]
   out <- out %>% as.data.frame() %>% t()
-  out <- out %>% as.data.frame() %>% mutate(condition = paste(i))
+  out <- out %>% as.data.frame() %>% mutate(Condition = paste(i)) %>% rename(interaction.F= F, interaction.pValue = pval)
   interaction_dat_out <- rbind(interaction_dat_out, out)
-  rm(out) } 
+  rm(out, temp, pval, F) } 
 
+#merge subgroup with interaction data
+mod_out_subgroup <- mod_out_subgroup %>% mutate(Condition= paste(Variable, subgroup, sep='_')) %>% 
+  left_join(interaction_dat_out, by= 'Condition') %>%
+  select(-c('min.idx', 'min.Level', 'min.ethnicity_Level', 'min.SE', 'min.CI_lower', 'min.CI_upper', 
+            'max.idx', 'max.Level', 'max.ethnicity_Level', 'max.SE', 'max.CI_lower', 'max.CI_upper', 'Condition'))
 ```
+
+
+#plots
+
+#check this- it is a copy paste from old .rmd
+``` {r}
+plot <- ggplot(data=data_GL)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category), alpha = 0.5)+
+        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
+        scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
+        labs(y = "Glucose (mmol/L)",
+             x= "Menstrual cycle status") + 
+        ylim(4.6,5.3)+
+        facet_rep_wrap(~Covariate, ncol=7)+
+        theme(axis.line = element_line(colour = "black"),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              axis.title.x =element_blank())
+GL.plot <- plot
+
+plot <- ggplot(data=data_TGL)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
+        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
+        scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
+        labs(y = "Triglyceride (mmol/L)",
+             x= "Menstrual cycle status") + 
+        ylim(0.8,1.8)+
+        facet_rep_wrap(~Covariate, ncol=7)+
+        theme(axis.line = element_line(colour = "black"),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank(),
+              axis.title.x =element_blank())
+TG.plot <- plot
+
+plot <- ggplot(data=data_TyG)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
+        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
+        scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
+        labs(y = "TyG index (mmol/L)",
+             x= "Menstrual cycle status") + 
+        ylim(4.2,4.8)+
+        facet_rep_wrap(~Covariate, ncol=7)+
+        theme(axis.line = element_line(colour = "black"),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank())
+TyG.plot <- plot
+
+plot <- ggplot(data=data_TC)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
+        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
+        scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
+        labs(y = "Total cholesterol (mmol/L)",
+             x= "Menstrual cycle status") + 
+        ylim(4.9,5.9)+
+        facet_rep_wrap(~Covariate, ncol=7, scales="free")+
+        theme(axis.line = element_line(colour = "black"),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              axis.title.x =element_blank())
+TC.plot <- plot
+
+plot <- ggplot(data=data_HDL)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
+        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
+        scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
+        labs(y = "HDL (mmol/L)",
+             x= "Menstrual cycle status") + 
+        ylim(1.2,1.9)+
+        facet_rep_wrap(~Covariate, ncol=7, scales="free")+
+        theme(axis.line = element_line(colour = "black"),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank(),
+              axis.title.x =element_blank())
+HDL.plot <- plot
+
+plot <- ggplot(data=data_LDL)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
+        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
+        scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
+        labs(y = "LDL (mmol/L)",
+             x= "Menstrual cycle status") + 
+        ylim(2.9,3.7)+
+        facet_rep_wrap(~Covariate, ncol=7, scales="free")+
+        theme(axis.line = element_line(colour = "black"),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank(),
+              axis.title.x =element_blank())
+LDL.plot <- plot
+
+plot <- ggplot(data=data_TC.HDL)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
+        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
+        scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
+        labs(y = "Total cholesterol:HDL (mmol/L)",
+             x= "Menstrual cycle status") + 
+        ylim(3,4.5)+
+        facet_rep_wrap(~Covariate, ncol=7, scales="free")+
+        theme(axis.line = element_line(colour = "black"),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank())
+TC.HDL.plot <- plot
+
+combined <- ggarrange(GL.plot, TG.plot, TyG.plot, TC.plot, HDL.plot, LDL.plot, TC.HDL.plot, ncol=1,
+                      common.legend = TRUE, legend = "bottom")
+GL.TGL.TyG_combined <- ggarrange(GL.plot, TG.plot, TyG.plot, ncol=1,
+                      common.legend = TRUE, legend = "bottom")
+#save at 7 x 15
+
+Cholesterols_combined <- ggarrange(TC.plot, HDL.plot, LDL.plot, TC.HDL.plot, ncol=1,
+                      common.legend = TRUE, legend = "bottom")
+#save at 9 x 15
+```
+
