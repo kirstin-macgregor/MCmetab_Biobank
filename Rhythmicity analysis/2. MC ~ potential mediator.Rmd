@@ -155,7 +155,7 @@ for (i in mediators_loop) {
   mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out)
 
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
-     plot.data.max, plot.data.min, out) }  }
+     plot.data.max, plot.data.min, out) } 
 
 #write.csv(mod_out_MCsymptoms, 'metab~mediator_MCexcluded.csv')
 ```
@@ -171,6 +171,10 @@ plot.data.pChars <- plot.data.pChars %>%  mutate(mediator = replace(mediator, me
                                             mediator = replace(mediator, mediator=="MET.summed", "Summed physical activity (MET min/ wk)"),
                                             mediator = replace(mediator, mediator=="Fitness_METs_c", "Cardiorespiratory fitness (METs)"),
                                             mediator = replace(mediator, mediator=="handgripkg", "Handgrip strength (kg)"))
+
+plot.dat.metabolites$Variable <- factor(plot.dat.metabolites$Variable, levels= c("BMI (kg/m2)", "Fat mass (%)", "Fat free mass (%)",
+                                                                                 "Summed physical activity (MET min/ wk)", "Cardiorespiratory fitness (METs)",
+                                                                                 "Handgrip strength (kg)"))
 
 plot.data.inflam <- rbind(plot.data_CRP_0, plot.data_n_30800_0_0)
 plot.data.inflam <- plot.data.inflam %>%  mutate(mediator = replace(mediator, mediator=="CRP_0", "CRP (mg/L"),

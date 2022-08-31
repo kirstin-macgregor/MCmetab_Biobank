@@ -55,7 +55,8 @@ for (i in variables) {
   a <- plot_smooths(mod1, series='MC.status')
   plot.data <- a[[1]]
   plot.data <- plot.data %>% filter(ethnicity_cat== 1)
-  assign(paste('plot.data_', i, sep=''), plot.data)
+  plot.data2 <- plot.data %>%  mutate(Variable= paste(i))
+  assign(paste('plot.data_', i, sep=''), plot.data2)
   max.val <- max(plot.data$var)
   min.val <- min(plot.data$var)
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
@@ -65,6 +66,7 @@ for (i in variables) {
                             'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
   
   out<- cbind(full.summary, plot.data)
+
   mod_out_simple <- rbind(mod_out_simple, out)
   
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
@@ -155,9 +157,32 @@ for (i in variables) {
 
 #plots
 ``` {r}
-metabolites <- rbind(plot.data_n_30740_0_0, plot.data_TG_0, plot.data_TG_0, plot.data_ldl_0, plot.data_HDL_0, plot.data_tyG.index2)
+metabolites <- rbind(plot.data_n_30740_0_0, plot.data_TG_0, plot.data_TG_0, plot.data_TC.HDL, plot.data_ldl_0, plot.data_HDL_0, plot.data_tyG.index2)
 
+plot.dat.metabolites <- metabolites %>%  mutate(Variable = replace(Variable, Variable=="n_30740_0_0", "Glucose"),
+                                       Variable = replace(Variable, Variable=="Tchol_0", "Total cholesterol"),
+                                       Variable = replace(Variable, Variable=="TG_0", "Triglcyeride"),
+                                       Variable = replace(Variable, Variable=="ldl_0", "LDL"),
+                                       Variable = replace(Variable, Variable=="HDL_0", "HDL"),
+                                       Variable = replace(Variable, Variable=="TC.HDL", "Total:HDL cholesterol"),
+                                       Variable = replace(Variable, Variable=="tyG.index2", "TyG index"))
 
+plot.dat.metabolites$Variable <- factor(plot.dat.metabolites$Variable, levels= c("Glucose", "Triglcyeride", "TyG index", "Total cholesterol", "LDL", "HDL",
+                                                                                 "Total:HDL cholesterol"))
 
+plot.metabolites <- ggplot(data =plot.dat.metabolites)+
+  geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill="#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=MC.status))+
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.title.x =element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~Variable, scales = 'free_y')
+
+plot.metabolites
 
 ```
