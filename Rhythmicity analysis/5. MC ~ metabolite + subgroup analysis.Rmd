@@ -46,11 +46,12 @@ cats_3 <- c('0', '1', '2')
 ```
 
 
+#simple model
 ```{r}
 mod_out_subgroup <- data.frame(matrix(ncol =22, nrow = 0))
 interaction_loop <- list()
 interaction_names <- c()
-plot.data.all <- data.frame(matrix(ncol =7, nrow = 0))
+plot.data.all <- data.frame(matrix(ncol =9, nrow = 0))
 
 #for all sub-groups except from IPAQ
 for (i in metabolite_loop) {
@@ -82,19 +83,19 @@ for (i in metabolite_loop) {
       a <- plot_smooths(model=mod1,series=MC.status)
       plot.data <- a[['data']]
       plot.data <- plot.data %>% filter(ethnicity_cat== 1)
-      plot.data <- plot.data %>% mutate(Variable= paste(i), SubGroup=paste(j))%>%  select(-c('.idx', 'ethnicity_cat', 'SE'))
+      plot.data2 <- plot.data %>%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data <- plot.data %>% select(-c('.idx', 'ethnicity_cat', 'SE'))
       cat <- plot.data %>% filter(subgroupVar==n)
       max.val <- max(cat$var)
       min.val <- min(cat$var)
       plot.data.min <- cat %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
       plot.data.max <- cat %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
       plot.data.cat <- cbind(plot.data.min, plot.data.max)
-      colnames(plot.data.cat) <- c('min.idx', 'min.Level', 'min.ethnicity_Level', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                                   'max.idx', 'max.Level', 'max.ethnicity_Level', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower')
+      colnames(plot.data.cat) <- c('min.subgroupVar ', 'min.MC.status', 'min.outcomevar', 'min.CI_upper', 'min.CI_lower',
+                                   'max.subgroupVar', 'max.MC.status', 'max.outcomevar', 'max.CI_upper', 'max.CI_lower')
       plot.data_out_simple <- rbind(plot.data_out_simple, plot.data.cat) 
-      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)
-      plot.data.all <- rbind(plot.data.all, plot.data) }
-    
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)  }
+    plot.data.all <- rbind(plot.data.all, plot.data2)
     out <-cbind(full.summary, plot.data_out_simple)
     mod_out_subgroup <- rbind(mod_out_subgroup, out)
     
@@ -131,22 +132,25 @@ for (i in metabolite_loop) {
       a <- plot_smooths(model=mod1,series=MC.status)
       plot.data <- a[['data']]
       plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+      plot.data2 <- plot.data %>%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data <- plot.data %>% select(-c('.idx', 'ethnicity_cat', 'SE'))
       cat <- plot.data %>% filter(subgroupVar==n)
       max.val <- max(cat$var)
       min.val <- min(cat$var)
       plot.data.min <- cat %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
       plot.data.max <- cat %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
       plot.data.cat <- cbind(plot.data.min, plot.data.max)
-      colnames(plot.data.cat) <- c('min.idx', 'min.Level', 'min.ethnicity_Level', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                                   'max.idx', 'max.Level', 'max.ethnicity_Level', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower')
+      colnames(plot.data.cat) <- c('min.subgroupVar ', 'min.MC.status', 'min.outcomevar', 'min.CI_upper', 'min.CI_lower',
+                                   'max.subgroupVar', 'max.MC.status', 'max.outcomevar', 'max.CI_upper', 'max.CI_lower')
       plot.data_out_simple <- rbind(plot.data_out_simple, plot.data.cat) 
       rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a) }
+    plot.data.all <- rbind(plot.data.all, plot.data2)
     
     out <-cbind(full.summary, plot.data_out_simple)
     mod_out_subgroup <- rbind(mod_out_subgroup, out)
 
     rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
-       temp_loop, mod.simple, dev.summary) } }
+       temp_loop, mod.simple, dev.summary, plot.data2) } }
 
 #interaction testing
 interaction_fun <- function(x) { anova(x$mod1, x$mod2, test='F') }
@@ -167,11 +171,14 @@ for (i in interaction_names) {
   interaction_dat_out <- rbind(interaction_dat_out, out)
   rm(out, temp, pval, F) } 
 
+
 #merge subgroup with interaction data
 mod_out_subgroup <- mod_out_subgroup %>% mutate(Condition= paste(Variable, subgroup, sep='_')) %>% 
   left_join(interaction_dat_out, by= 'Condition') %>%
-  select(-c('min.idx', 'min.Level', 'min.ethnicity_Level', 'min.SE', 'min.CI_lower', 'min.CI_upper', 
-            'max.idx', 'max.Level', 'max.ethnicity_Level', 'max.SE', 'max.CI_lower', 'max.CI_upper', 'Condition'))
+  select(-c('Condition'))
+
+
+rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
 ```
 
 
@@ -179,24 +186,46 @@ mod_out_subgroup <- mod_out_subgroup %>% mutate(Condition= paste(Variable, subgr
 
 #check this- it is a copy paste from old .rmd
 ``` {r}
-plot <- ggplot(data=data_GL)+
-        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category), alpha = 0.5)+
-        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+plot.data.all <- plot.data.all %>%  mutate(Variable = replace(Variable, Variable=="n_30740_0_0", "Glucose"),
+                                       Variable = replace(Variable, Variable=="Tchol_0", "TotalCholesterol"),
+                                       Variable = replace(Variable, Variable=="TG_0", "Triglcyeride"),
+                                       Variable = replace(Variable, Variable=="ldl_0", "LDL"),
+                                       Variable = replace(Variable, Variable=="HDL_0", "HDL"),
+                                       Variable = replace(Variable, Variable=="TC.HDL", "Total:HDLCholesterol"),
+                                       Variable = replace(Variable, Variable=="tyG.index2", "TyG"))
+
+
+metabolite_loop <- c('Glucose', 'TotalCholesterol', 'Triglcyeride', 'LDL', 'HDL', 'Total:HDLCholesterol', 'TyG')
+
+
+
+
+for (i in metabolite_loop) {
+  plot.dat.temp <- plot.data.all %>%  filter(Variable == i)
+  assign(paste('plot.dat', i, sep='_'), plot.dat.temp)
+  rm(plot.dat.temp) }
+
+
+
+ç
+Glucose_plot <- ggplot(data=plot.dat_Glucose)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
         scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
         labs(y = "Glucose (mmol/L)",
              x= "Menstrual cycle status") + 
         ylim(4.6,5.3)+
-        facet_rep_wrap(~Covariate, ncol=7)+
+        facet_wrap(~Subgroup, ncol=7)+
         theme(axis.line = element_line(colour = "black"),
               panel.grid.major = element_blank(),
               panel.grid.minor = element_blank(),
               panel.border = element_blank(),
               panel.background = element_blank(),
               axis.title.x =element_blank())
-GL.plot <- plot
+Glucose_plot
 
-plot <- ggplot(data=data_TGL)+
+Triglyceride_ <- ggplot(data=plot.dat_Triglyceride)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
         geom_line(aes(y=value, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
@@ -213,9 +242,8 @@ plot <- ggplot(data=data_TGL)+
               strip.background = element_blank(),
               strip.text.x = element_blank(),
               axis.title.x =element_blank())
-TG.plot <- plot
 
-plot <- ggplot(data=data_TyG)+
+TyG_plot <- ggplot(data=plot.dat_TyG index)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
         geom_line(aes(y=value, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
@@ -233,7 +261,7 @@ plot <- ggplot(data=data_TyG)+
               strip.text.x = element_blank())
 TyG.plot <- plot
 
-plot <- ggplot(data=data_TC)+
+plot <- ggplot(data=plot.dat)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
         geom_line(aes(y=value, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
@@ -250,7 +278,7 @@ plot <- ggplot(data=data_TC)+
               axis.title.x =element_blank())
 TC.plot <- plot
 
-plot <- ggplot(data=data_HDL)+
+plot <- ggplot(data=plot.dat)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
         geom_line(aes(y=value, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
@@ -269,7 +297,7 @@ plot <- ggplot(data=data_HDL)+
               axis.title.x =element_blank())
 HDL.plot <- plot
 
-plot <- ggplot(data=data_LDL)+
+plot <- ggplot(data=plot.dat)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
         geom_line(aes(y=value, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
@@ -288,7 +316,7 @@ plot <- ggplot(data=data_LDL)+
               axis.title.x =element_blank())
 LDL.plot <- plot
 
-plot <- ggplot(data=data_TC.HDL)+
+plot <- ggplot(data=plot.dat)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
         geom_line(aes(y=value, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
