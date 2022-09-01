@@ -25,6 +25,12 @@ rm(list= ls())
 setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Data")
 data <- read.csv("filtered.data_20220627.csv")
 
+#sort out IPAQ cat labels so they are 1,2,3 not 0,1,2
+data <- data %>% mutate(n_22032_0_0 = case_when(
+  n_22032_0_0 == 0 ~ 1,
+  n_22032_0_0 == 1 ~ 2,
+  n_22032_0_0 == 2 ~ 3))
+
 data <- data %>% transform(Fitness_METs_c.tertiles=as.factor(Fitness_METs_c.tertiles),
                            muslcle.mass.perc.tertiles= as.factor(muslcle.mass.perc.tertiles),
                            Bodyfatp.tertiles= as.factor(Bodyfatp.tertiles),
@@ -33,6 +39,9 @@ data <- data %>% transform(Fitness_METs_c.tertiles=as.factor(Fitness_METs_c.tert
                            deprivationindex= as.numeric(deprivationindex),
                            ethnicity_cat= as.factor(ethnicity_cat),
                            age= as.numeric(age))
+
+
+
 ```
 
 #variables for loop
@@ -42,7 +51,7 @@ metabolite_loop <- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL
 subgroup_loop <- c('handgripkg.tertiles', 'Fitness_METs_c.tertiles', 'Bodyfatp.tertiles', 'muslcle.mass.perc.tertiles')
 cats_4 <- c('1', '2', '3', '4')
 IPAQ<- 'n_22032_0_0' #only 3 categories so will have to be done separately.
-cats_3 <- c('0', '1', '2')
+cats_3 <- c('1', '2', '3')
 ```
 
 
@@ -188,17 +197,22 @@ rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
 ``` {r}
 plot.data.all <- plot.data.all %>%  mutate(Variable = replace(Variable, Variable=="n_30740_0_0", "Glucose"),
                                        Variable = replace(Variable, Variable=="Tchol_0", "TotalCholesterol"),
-                                       Variable = replace(Variable, Variable=="TG_0", "Triglcyeride"),
+                                       Variable = replace(Variable, Variable=="TG_0", "Triglyceride"),
                                        Variable = replace(Variable, Variable=="ldl_0", "LDL"),
                                        Variable = replace(Variable, Variable=="HDL_0", "HDL"),
-                                       Variable = replace(Variable, Variable=="TC.HDL", "Total:HDLCholesterol"),
-                                       Variable = replace(Variable, Variable=="tyG.index2", "TyG"))
+                                       Variable = replace(Variable, Variable=="TC.HDL", "Total.HDLCholesterol"),
+                                       Variable = replace(Variable, Variable=="tyG.index2", "TyG"),
+                                       Subgroup = replace(Subgroup, Subgroup== 'handgripkg.tertiles', 'Grip strength'),
+                                       Subgroup = replace(Subgroup, Subgroup== 'Fitness_METs_c.tertiles', 'Cardiorespiratory fitness'),
+                                       Subgroup = replace(Subgroup, Subgroup== 'Bodyfatp.tertiles', 'Fat mass'),
+                                       Subgroup = replace(Subgroup, Subgroup== 'muslcle.mass.perc.tertiles', 'Fat-free mass'),
+                                       Subgroup = replace(Subgroup, Subgroup== 'n_22032_0_0', 'Physical activity'))
+
+metabolite_loop <- c("Glucose", "TotalCholesterol", "Triglcyeride", "LDL", "HDL", "Total.HDLCholesterol", "TyG")
 
 
-metabolite_loop <- c('Glucose', 'TotalCholesterol', 'Triglcyeride', 'LDL', 'HDL', 'Total:HDLCholesterol', 'TyG')
-
-
-
+#sort out the factor level orders
+plot.data.all$Subgroup <- factor(plot.data.all$Subgroup, levels =c('Fat mass', 'Fat-free mass','Grip strength', 'Cardiorespiratory fitness', 'Physical activity'))
 
 for (i in metabolite_loop) {
   plot.dat.temp <- plot.data.all %>%  filter(Variable == i)
@@ -206,15 +220,12 @@ for (i in metabolite_loop) {
   rm(plot.dat.temp) }
 
 
-
-ç
 Glucose_plot <- ggplot(data=plot.dat_Glucose)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar), alpha = 0.5)+
         geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
         scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
-        labs(y = "Glucose (mmol/L)",
-             x= "Menstrual cycle status") + 
+        labs(y = "Glucose (mmol/L)", x= "Menstrual cycle status") + 
         ylim(4.6,5.3)+
         facet_wrap(~Subgroup, ncol=7)+
         theme(axis.line = element_line(colour = "black"),
@@ -223,17 +234,15 @@ Glucose_plot <- ggplot(data=plot.dat_Glucose)+
               panel.border = element_blank(),
               panel.background = element_blank(),
               axis.title.x =element_blank())
-Glucose_plot
 
-Triglyceride_ <- ggplot(data=plot.dat_Triglyceride)+
-        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
-        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+Triglyceride_plot <- ggplot(data=plot.dat_Triglcyeride)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar ), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
         scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
-        labs(y = "Triglyceride (mmol/L)",
-             x= "Menstrual cycle status") + 
+        labs(y = "Triglyceride (mmol/L)", x= "Menstrual cycle status") + 
         ylim(0.8,1.8)+
-        facet_rep_wrap(~Covariate, ncol=7)+
+        facet_wrap(~Subgroup, ncol=7)+
         theme(axis.line = element_line(colour = "black"),
               panel.grid.major = element_blank(),
               panel.grid.minor = element_blank(),
@@ -243,31 +252,29 @@ Triglyceride_ <- ggplot(data=plot.dat_Triglyceride)+
               strip.text.x = element_blank(),
               axis.title.x =element_blank())
 
-TyG_plot <- ggplot(data=plot.dat_TyG index)+
-        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
-        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+TyG_plot <- ggplot(data=plot.dat_TyG)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar ), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
         scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
-        labs(y = "TyG index (mmol/L)",
-             x= "Menstrual cycle status") + 
+        labs(y = "TyG index (mmol/L)",  x= "Menstrual cycle status") + 
         ylim(4.2,4.8)+
-        facet_rep_wrap(~Covariate, ncol=7)+
+        facet_wrap(~Subgroup, ncol=7)+
         theme(axis.line = element_line(colour = "black"),
               panel.grid.major = element_blank(),
               panel.grid.minor = element_blank(),
               panel.border = element_blank(),
               panel.background = element_blank(),
               strip.background = element_blank(),
-              strip.text.x = element_blank())
-TyG.plot <- plot
+              strip.text.x = element_blank(),
+              axis.title.x =element_blank())
 
 plot <- ggplot(data=plot.dat)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
-        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        geom_line(aes(y=var, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
         scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
-        labs(y = "Total cholesterol (mmol/L)",
-             x= "Menstrual cycle status") + 
+        labs(y = "Total cholesterol (mmol/L)",  x= "Menstrual cycle status") + 
         ylim(4.9,5.9)+
         facet_rep_wrap(~Covariate, ncol=7, scales="free")+
         theme(axis.line = element_line(colour = "black"),
@@ -280,11 +287,10 @@ TC.plot <- plot
 
 plot <- ggplot(data=plot.dat)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
-        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        geom_line(aes(y=var, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
         scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
-        labs(y = "HDL (mmol/L)",
-             x= "Menstrual cycle status") + 
+        labs(y = "HDL (mmol/L)", x= "Menstrual cycle status") + 
         ylim(1.2,1.9)+
         facet_rep_wrap(~Covariate, ncol=7, scales="free")+
         theme(axis.line = element_line(colour = "black"),
@@ -299,11 +305,10 @@ HDL.plot <- plot
 
 plot <- ggplot(data=plot.dat)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
-        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        geom_line(aes(y=var, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
         scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
-        labs(y = "LDL (mmol/L)",
-             x= "Menstrual cycle status") + 
+        labs(y = "LDL (mmol/L)", x= "Menstrual cycle status") + 
         ylim(2.9,3.7)+
         facet_rep_wrap(~Covariate, ncol=7, scales="free")+
         theme(axis.line = element_line(colour = "black"),
@@ -314,11 +319,10 @@ plot <- ggplot(data=plot.dat)+
               strip.background = element_blank(),
               strip.text.x = element_blank(),
               axis.title.x =element_blank())
-LDL.plot <- plot
 
 plot <- ggplot(data=plot.dat)+
         geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=Category ), alpha = 0.5)+
-        geom_line(aes(y=value, x=MC.status, linetype=Category))+
+        geom_line(aes(y=var, x=MC.status, linetype=Category))+
         scale_fill_manual(values = c("#440154FF", "#39568CFF", "#55C667FF", "#DCE319FF"))+
         scale_linetype_manual(values=c("solid", "dotted", "longdash", "dotdash"))+
         labs(y = "Total cholesterol:HDL (mmol/L)",
@@ -332,7 +336,6 @@ plot <- ggplot(data=plot.dat)+
               panel.background = element_blank(),
               strip.background = element_blank(),
               strip.text.x = element_blank())
-TC.HDL.plot <- plot
 
 combined <- ggarrange(GL.plot, TG.plot, TyG.plot, TC.plot, HDL.plot, LDL.plot, TC.HDL.plot, ncol=1,
                       common.legend = TRUE, legend = "bottom")
