@@ -37,10 +37,8 @@ top1perc.CRP <- quantile(data$CRP_0, .99, na.rm=TRUE)
 top1perc.IGF <- quantile(data$n_30770_0_0, .99, na.rm=TRUE)
 
 #exclude top 1 % of predictor values
-data.excl <- data %>% filter(CRP_0 <= top1perc.CRP,
+data <- data %>% filter(CRP_0 <= top1perc.CRP,
                          n_30770_0_0 <= top1perc.IGF)
-
-
 ```
 
 #variables for loop
@@ -73,7 +71,8 @@ for (i in metabolite_loop) {
   
   rm(mod1, summary, s.summary, n.summary, dev.summary, out) } }
 
-#write.csv(mod_out_simple, 'metab~mediator_simple.csv')
+write.csv(mod_out_simple,
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhthmicity analysis/metab~mediator_simple.csv')
 ```
 
 
@@ -101,7 +100,8 @@ for (i in metabolite_loop) {
   rm(mod1, summary, s.summary, n.summary, dev.summary, out) } }
 
 
-#write.csv(mod_out_fasted, 'metab~mediator_fastedDur.csv')
+write.csv(mod_out_fasted,
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/metab~mediator_fastedDur.csv')
 ```
 
 

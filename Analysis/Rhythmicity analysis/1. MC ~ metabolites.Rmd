@@ -20,8 +20,7 @@ rm(list= ls())
 
 
 ```{r}
-setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered")
-data <- read.csv("filtered.data_20220627.csv")
+data <- read.csv("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered/filtered.data_20220627.csv")
 
 data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
                            age= as.numeric(age),
@@ -72,7 +71,8 @@ for (i in variables) {
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
      plot.data.max, plot.data.min, out) }
 
-#write.csv(mod_out_simple, 'MC~metab_simple.csv')
+write.csv(mod_out_simple,
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/MC~metab_simple.csv')
 ```
 
 
@@ -109,7 +109,7 @@ for (i in variables) {
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
      plot.data.max, plot.data.min, out) }
 
-#write.csv(mod_out_fastingDur, 'MC~metab_fastingDur.csv')
+write.csv(mod_out_fastingDur, 'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/MC~metab_fastingDur.csv')
 ```
 
 #3. excluding women with menstrual cycle symptoms
@@ -151,7 +151,8 @@ for (i in variables) {
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
      plot.data.max, plot.data.min, out) }
 
-#write.csv(mod_out_fastingDur, 'MC~metab_MCexcluded.csv')
+write.csv(mod_out_fastingDur,
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/MC~metab_MCexcluded.csv')
 ```
 
 
@@ -184,5 +185,5 @@ plot.metabolites <- ggplot(data =plot.dat.metabolites)+
   facet_wrap(~Variable, scales = 'free_y')
 
 plot.metabolites
-
+#save at 8 x 8
 ```
