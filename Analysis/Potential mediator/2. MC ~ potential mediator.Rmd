@@ -22,8 +22,9 @@ rm(list= ls())
 
 #set up data and arange
 ```{r}
-setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Data")
+setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered")
 data <- read.csv("filtered.data_20220627.csv")
+
 
 data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
                            age= as.numeric(age),

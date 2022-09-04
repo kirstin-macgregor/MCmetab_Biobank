@@ -22,7 +22,7 @@ rm(list= ls())
 
 #set up data and arange
 ```{r}
-setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Data")
+setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered")
 data <- read.csv("filtered.data_20220627.csv")
 
 #sort out IPAQ cat labels so they are 1,2,3 not 0,1,2

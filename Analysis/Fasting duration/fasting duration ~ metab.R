@@ -1,6 +1,6 @@
 #UK BB data set- data familiarization
 rm(list= ls())
-setwd("/Users/kirstinMac/Desktop/OneDrive - University of Stirling/PhD/Studies/BioBank/Data")
+setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered")
 library(tidyverse)
 library(plyr)
 library(ggplot2)
@@ -12,7 +12,8 @@ library(magrittr)
 library(mgcv)
 library(lme4)
 library(emmeans)
-data <- read.csv("filtered.data_05.08.21.csv")
+
+data <- read.csv("filtered.data_20220627.csv")
 
 #select all feeding and metabolite columns
 feeding.data <- data %>% filter(age <51) %>% select(c('eid', 'n_30740_0_0', 'TG_0', 'Tchol_0', 'HDL_0','ldl_0', 'HbA1c_0',
