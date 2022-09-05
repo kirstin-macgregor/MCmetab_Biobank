@@ -22,8 +22,7 @@ rm(list= ls())
 
 #set up data and arange
 ```{r}
-setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered")
-data <- read.csv("filtered.data_20220627.csv")
+data <- read.csv("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered/filtered.data_20220627.csv")
 
 
 data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
@@ -77,7 +76,8 @@ for (i in mediators_loop) {
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
      plot.data.max, plot.data.min, out) }
 
-#write.csv(mod_out_simple, 'metab~mediator_simple.csv')
+write.csv(mod_out_simple,
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Potential mediator/ metab~mediator_simple.csv')
 ```
 
 
@@ -115,7 +115,8 @@ for (i in mediators_loop) {
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
      plot.data.max, plot.data.min, out) }
 
-#write.csv(mod_out_fasted, 'metab~mediator_fastedDur.csv')
+write.csv(mod_out_fasted,
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Potential mediator/metab~mediator_fastedDur.csv')
 ```
 
 
@@ -158,7 +159,8 @@ for (i in mediators_loop) {
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
      plot.data.max, plot.data.min, out) } 
 
-#write.csv(mod_out_MCsymptoms, 'metab~mediator_MCexcluded.csv')
+write.csv(mod_out_MCsymptoms,
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Potential mediator/metab~mediator_MCexcluded.csv')
 ```
 
 
@@ -178,8 +180,8 @@ plot.dat.metabolites$Variable <- factor(plot.dat.metabolites$Variable, levels= c
                                                                                  "Handgrip strength (kg)"))
 
 plot.data.inflam <- rbind(plot.data_CRP_0, plot.data_n_30800_0_0)
-plot.data.inflam <- plot.data.inflam %>%  mutate(mediator = replace(mediator, mediator=="CRP_0", "CRP (mg/L"),
-                                                 mediator = replace(mediator, mediator=="n_30800_0_0", "IGF-1 (mmol/L"))                  
+plot.data.inflam <- plot.data.inflam %>%  mutate(mediator = replace(mediator, mediator=="CRP_0", "CRP (mg/L)"),
+                                                 mediator = replace(mediator, mediator=="n_30800_0_0", "IGF-1 (mmol/L)"))                  
 
 plot.pChars <- ggplot(data =plot.data.pChars)+
   geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
@@ -207,4 +209,8 @@ plot.inflam <- ggplot(data =plot.data.inflam)+
         legend.position = 'none')+
   facet_wrap(~ mediator,scales= 'free', ncol=2, nrow=3)
 
+
+
+plot.pChars #save at  6 x 8
+plot.inflam #save at  3 x 6
 ```

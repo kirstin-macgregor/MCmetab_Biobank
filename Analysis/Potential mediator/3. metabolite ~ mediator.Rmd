@@ -22,8 +22,7 @@ rm(list= ls())
 
 #set up data and arange
 ```{r}
-setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered")
-data <- read.csv("filtered.data_20220627.csv")
+data <- read.csv("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered/filtered.data_20220627.csv")
 
 data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
                            age= as.numeric(age),
@@ -51,7 +50,8 @@ mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_
 # Simple model
 ```{r}
 mod_out_simple <- data.frame(matrix(ncol =9, nrow = 0))
-
+i <- 'n_30740_0_0'
+j <- 'CRP_0'
 for (i in metabolite_loop) {
   data_loop <- rename(data, var= i)
   
@@ -69,10 +69,17 @@ for (i in metabolite_loop) {
   
   mod_out_simple <- rbind(mod_out_simple, out)
   
+  a <- plot_smooths(model= mod1, series= covar)
+  plot.data <- a[[1]]
+  plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+  plot.data <- plot.data %>% mutate(OutcomeVar= paste(i),
+                                    PredictVar = paste(j))
+  assign(paste('plot.data_', i, j, sep=''), plot.data)
+  
   rm(mod1, summary, s.summary, n.summary, dev.summary, out) } }
 
 write.csv(mod_out_simple,
-          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhthmicity analysis/metab~mediator_simple.csv')
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Potential mediator/metab~mediator_simple.csv')
 ```
 
 
@@ -97,11 +104,12 @@ for (i in metabolite_loop) {
   
   mod_out_fasted <- rbind(mod_out_fasted, out)
   
-  rm(mod1, summary, s.summary, n.summary, dev.summary, out) } }
+  rm(mod1, summary, s.summary, n.summary, dev.summary, out, data_loop_2, a, plot.data) } }
 
+rm(data_loop)
 
 write.csv(mod_out_fasted,
-          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/metab~mediator_fastedDur.csv')
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Potential mediator/metab~mediator_fastedDur.csv')
 ```
 
 
@@ -134,5 +142,139 @@ for (i in metabolite_loop) {
   
   rm(mod1, summary, s.summary, n.summary, dev.summary, out) } }
 
-#write.csv(mod_out_MCsymptoms, 'metab~mediator_MCexcluded.csv')
+write.csv(mod_out_MCsymptoms,
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Potential mediator/metab~mediator_MCexcluded.csv')
+```
+
+
+```{r}
+plot.data_all <- do.call(rbind, lapply(ls(pattern = 'plot.data_.'), get))
+
+plot.data_all <- plot.data_all %>%  mutate(OutcomeVar = replace(OutcomeVar, OutcomeVar=="n_30740_0_0", "Glucose"),
+                                       OutcomeVar = replace(OutcomeVar, OutcomeVar=="Tchol_0", "TotalCholesterol"),
+                                       OutcomeVar = replace(OutcomeVar, OutcomeVar=="TG_0", "Triglyceride"),
+                                       OutcomeVar = replace(OutcomeVar, OutcomeVar=="ldl_0", "LDL"),
+                                       OutcomeVar = replace(OutcomeVar, OutcomeVar=="HDL_0", "HDL"),
+                                       OutcomeVar = replace(OutcomeVar, OutcomeVar=="TC.HDL", "Total.HDLCholesterol"),
+                                       OutcomeVar = replace(OutcomeVar, OutcomeVar=="tyG.index2", "TyG"),
+                                       PredictVar = replace(PredictVar, PredictVar== 'handgripkg', 'Grip strength'),
+                                       PredictVar = replace(PredictVar, PredictVar== 'Fitness_METs_c', 'Cardiorespiratory fitness'),
+                                       PredictVar = replace(PredictVar, PredictVar== 'bodyfat_p', 'Fat mass'),
+                                       PredictVar = replace(PredictVar, PredictVar== 'SMusclemasspct_c', 'Fat-free mass'),
+                                       PredictVar = replace(PredictVar, PredictVar== 'MET.summed', 'Physical activity'),
+                                       PredictVar = replace(PredictVar, PredictVar== 'CRP_0', 'CRP'),
+                                       PredictVar = replace(PredictVar, PredictVar== 'n_30800_0_0', 'IGF-1'),
+                                       OutcomeVar_PredictVar = paste(OutcomeVar, PredictVar, sep= '_'))
+
+
+plot.data_glucose <- filter(plot.data_all, OutcomeVar== 'Glucose')
+plot.data_TC <- filter(plot.data_all, OutcomeVar== 'TotalCholesterol')
+plot.data_TG <- filter(plot.data_all, OutcomeVar== 'Triglyceride')
+plot.data_LDL <- filter(plot.data_all, OutcomeVar== 'LDL')
+plot.data_HDL <- filter(plot.data_all, OutcomeVar== 'HDL')
+plot.data_TCHDL <- filter(plot.data_all, OutcomeVar== 'Total.HDLCholesterol')
+plot.data_TyG <- filter(plot.data_all, OutcomeVar== 'TyG')
+
+
+plot.glucose <- ggplot(data =plot.data_glucose)+
+  geom_ribbon(aes(x=covar, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=covar))+
+  labs(y = "Glucose (mmol/L)", x= "Potential mediator") + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~PredictVar, scales = 'free_x')
+
+plot.TC <- ggplot(data =plot.data_TC)+
+  geom_ribbon(aes(x=covar, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=covar))+
+  labs(y = "Total cholesterol (mmol/L)", x= "Potential mediator") + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~PredictVar, scales = 'free_x')
+
+plot.TG <- ggplot(data =plot.data_TG)+
+  geom_ribbon(aes(x=covar, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=covar))+
+  labs(y = "Triglyceride (mmol/L)", x= "Potential mediator") + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~PredictVar, scales = 'free_x')
+
+plot.LDL <- ggplot(data =plot.data_LDL)+
+  geom_ribbon(aes(x=covar, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=covar))+
+  labs(y = "LDL (mmol/L)", x= "Potential mediator") + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~PredictVar, scales = 'free_x')
+
+plot.HDL <- ggplot(data =plot.data_HDL)+
+  geom_ribbon(aes(x=covar, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=covar))+
+  labs(y = "HDL (mmol/L)", x= "Potential mediator") + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~PredictVar, scales = 'free_x')
+
+plot.TCHDL <- ggplot(data =plot.data_TCHDL)+
+  geom_ribbon(aes(x=covar, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=covar))+
+  labs(y = "Total.HDLCholesterol (mmol/L)", x= "Potential mediator") + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~PredictVar, scales = 'free_x')
+
+plot.TyG <- ggplot(data =plot.data_TyG)+
+  geom_ribbon(aes(x=covar, ymin = CI_lower, ymax = CI_upper, fill= "#39568CFF"),alpha = 0.5)+
+  scale_fill_manual(values = c("#39568CFF"))+
+  geom_line(aes(y=var, x=covar))+
+  labs(y = "TyG index (mmol/L)", x= "Potential mediator") + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        legend.position = 'none')+
+  facet_wrap(~PredictVar, scales = 'free_x')
+
+#save at 8 x10
+plot.TC
+plot.glucose
+plot.TG
+plot.LDL
+plot.TCHDL
+plot.HDL
+plot.TyG
+
+
 ```
