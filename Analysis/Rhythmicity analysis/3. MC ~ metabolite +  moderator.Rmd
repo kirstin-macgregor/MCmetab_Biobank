@@ -188,6 +188,9 @@ mod_out_subgroup <- mod_out_subgroup %>% mutate(Condition= paste(Variable, subgr
 
 
 rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
+
+write.csv(mod_out_subgroup, 
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab+moderator_simple.csv')
 ```
 
 

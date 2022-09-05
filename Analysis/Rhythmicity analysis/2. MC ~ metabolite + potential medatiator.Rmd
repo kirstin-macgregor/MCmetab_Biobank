@@ -36,7 +36,7 @@ data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
 #variables for loop
 ```{r}
 metabolite_loop <- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2')
-mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
+mediators_loop <- c('CRP_0', 'n_30800_0_0', 'bmi', 'bodyfat_p', 'SMusclemasspct_c', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
 
 interaction_fun <- function(x) { anova(x$mod1, x$mod2, test='F') }
 ```
