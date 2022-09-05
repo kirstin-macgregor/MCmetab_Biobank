@@ -110,7 +110,8 @@ mod_out_simple <- mod_out_simple %>% mutate(Condition= paste(Variable, mediator,
 
 rm(interaction_out_simple, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
 
-#write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_simple.csv')
+write.csv(mod_out_simple,
+'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_simple.csv')
 ```
 
 
@@ -182,7 +183,8 @@ mod_out_fasted <- mod_out_fasted %>% mutate(Condition= paste(Variable, mediator,
 
 rm(interaction_out_fasted, temp, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
 
-#write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_fastingDur.csv')
+write.csv(mod_out_fasted,
+'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_fastingDur.csv')
 ```
 
 
@@ -261,5 +263,6 @@ mod_out_MCsymptoms <- mod_out_MCsymptoms %>% mutate(Condition= paste(Variable, m
 
 rm(interaction_out_MC, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
 
-#write.csv(mod_out_MCsymptoms, 'MC~metab+mediator_MCexcluded.csv')
+write.csv(mod_out_MCsymptoms,
+'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_MCexcluded.csv')
 ```

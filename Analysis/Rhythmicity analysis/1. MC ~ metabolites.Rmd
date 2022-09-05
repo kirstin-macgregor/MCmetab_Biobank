@@ -72,7 +72,7 @@ for (i in variables) {
      plot.data.max, plot.data.min, out) }
 
 write.csv(mod_out_simple,
-          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/MC~metab_simple.csv')
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_simple.csv')
 ```
 
 
@@ -109,7 +109,7 @@ for (i in variables) {
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
      plot.data.max, plot.data.min, out) }
 
-write.csv(mod_out_fastingDur, 'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/MC~metab_fastingDur.csv')
+write.csv(mod_out_fastingDur, 'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_fastingDur.csv')
 ```
 
 #3. excluding women with menstrual cycle symptoms
@@ -152,7 +152,7 @@ for (i in variables) {
      plot.data.max, plot.data.min, out) }
 
 write.csv(mod_out_fastingDur,
-          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/MC~metab_MCexcluded.csv')
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_MCexcluded.csv')
 ```
 
 
