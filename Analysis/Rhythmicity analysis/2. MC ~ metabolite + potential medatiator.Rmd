@@ -111,7 +111,7 @@ mod_out_simple <- mod_out_simple %>% mutate(Condition= paste(Variable, mediator,
 rm(interaction_out_simple, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
 
 write.csv(mod_out_simple,
-'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_simple.csv')
+'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_simple2.csv')
 ```
 
 
