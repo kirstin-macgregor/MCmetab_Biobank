@@ -87,8 +87,9 @@ for (i in metabolite_loop) {
     interaction_loop<- append(interaction_loop, temp_loop)
     interaction_names <- append(interaction_names, paste(i, j, sep='_'))
     
+    plot.data_out_simple <- data.frame(matrix(ncol =16, nrow = 0))
     for (n in cats_4) {
-      plot.data_out_simple <- data.frame(matrix(ncol =16, nrow = 0))
+      
       a <- plot_smooths(model=mod1,series=MC.status)
       plot.data <- a[['data']]
       plot.data <- plot.data %>% filter(ethnicity_cat== 1)
