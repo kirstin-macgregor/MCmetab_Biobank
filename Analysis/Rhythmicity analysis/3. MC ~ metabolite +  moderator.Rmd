@@ -1,11 +1,18 @@
 ---
-title: "MC ~ metabolite + subgroup analysis"
+title: "Association between menstrual cycle and metabolite: Moderator analysis"
 author: "Kirstin MacGregor"
 date: '2022-08-26'
 output: html_document
 editor_options: 
   chunk_output_type: console
 ---
+
+# Background
+
+* To investigate whether the associations between menstrual cycle phase and metabolites differed by anthropometric, physical activity and fitness factors, potential moderators were coded as quartiles and included as an interaction term in the model.
+* To test the association between menstrual cycle phase and metabolites, additive models were fitted with a cyclic cubic regression spline.
+* An F test was conducted between the GAM with and wihout the moderator term to test whether model fit was improved.
+* The output is plotted as a line graph with upper and lower CI for each metabolite and moderator varaible.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -20,7 +27,7 @@ library(ggpubr)
 rm(list= ls())
 ```
 
-#set up data and arange
+# Set up data and arrange
 ```{r}
 setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered")
 data <- read.csv("filtered.data_20220627.csv")
@@ -39,12 +46,9 @@ data <- data %>% transform(Fitness_METs_c.tertiles=as.factor(Fitness_METs_c.tert
                            deprivationindex= as.numeric(deprivationindex),
                            ethnicity_cat= as.factor(ethnicity_cat),
                            age= as.numeric(age))
-
-
-
 ```
 
-#variables for loop
+# Set up variables for loop
 ```{r}
 metabolite_loop <- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2')
 
@@ -54,10 +58,9 @@ IPAQ<- 'n_22032_0_0' #only 3 categories so will have to be done separately.
 cats_3 <- c('1', '2', '3')
 ```
 
-
-#simple model
+# Simple model
 ```{r}
-mod_out_subgroup <- data.frame(matrix(ncol =22, nrow = 0))
+mod_out_subgroup_simple <- data.frame(matrix(ncol =22, nrow = 0))
 interaction_loop <- list()
 interaction_names <- c()
 plot.data.all <- data.frame(matrix(ncol =9, nrow = 0))
@@ -107,7 +110,7 @@ for (i in metabolite_loop) {
       rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)  }
     plot.data.all <- rbind(plot.data.all, plot.data2)
     out <-cbind(full.summary, plot.data_out_simple)
-    mod_out_subgroup <- rbind(mod_out_subgroup, out)
+    mod_out_subgroup_simple <- rbind(mod_out_subgroup_simple, out)
     
     rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
        temp_loop, mod.simple, dev.summary) } }
@@ -157,7 +160,7 @@ for (i in metabolite_loop) {
     plot.data.all <- rbind(plot.data.all, plot.data2)
     
     out <-cbind(full.summary, plot.data_out_simple)
-    mod_out_subgroup <- rbind(mod_out_subgroup, out)
+    mod_out_subgroup_simple <- rbind(mod_out_subgroup_simple, out)
 
     rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
        temp_loop, mod.simple, dev.summary, plot.data2) } }
@@ -183,16 +186,296 @@ for (i in interaction_names) {
 
 
 #merge subgroup with interaction data
-mod_out_subgroup <- mod_out_subgroup %>% mutate(Condition= paste(Variable, subgroup, sep='_')) %>% 
+mod_out_subgroup_simple <- mod_out_subgroup_simple %>% mutate(Condition= paste(Variable, subgroup, sep='_')) %>% 
   left_join(interaction_dat_out, by= 'Condition') %>%
   select(-c('Condition'))
 
 
 rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
 
-write.csv(mod_out_subgroup, 
+write.csv(mod_out_subgroup_simple, 
           'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab+moderator_simple.csv')
 ```
+
+# Adjusting for fasting duration
+```{r}
+mod_out_subgroup_fasting_dur <- data.frame(matrix(ncol =22, nrow = 0))
+interaction_loop <- list()
+interaction_names <- c()
+plot.data.all <- data.frame(matrix(ncol =9, nrow = 0))
+
+#for all sub-groups except from IPAQ
+for (i in metabolite_loop) {
+  data_loop <- rename(data, var= i)
+  
+  for (j in subgroup_loop) {
+    data_loop_2 <- rename(data_loop, subgroupVar=j)
+    mod1 <- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs="cc") + ethnicity_cat + s(age)+ s(deprivationindex), data=data_loop_2)
+    summary <- summary(mod1) #summary of model
+    s.summary <- as_tibble(summary$s.table)
+    nval.summary <- as_tibble(summary$n)
+    dev.summary <- as_tibble(summary$dev.expl)
+    MC.summary <- s.summary[1:4,]
+    MC.summary <- MC.summary[1:4,]
+    full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+    full.summary <- full.summary %>% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3,4))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp <- data_loop_2 %>% drop_na(subgroupVar)
+    mod.simple <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "subGroup" = j))
+    names(temp_loop)[1] <- paste(i, j, sep='_')
+    interaction_loop<- append(interaction_loop, temp_loop)
+    interaction_names <- append(interaction_names, paste(i, j, sep='_'))
+    
+    plot.data_out_simple <- data.frame(matrix(ncol =16, nrow = 0))
+    for (n in cats_4) {
+      
+      a <- plot_smooths(model=mod1,series=MC.status)
+      plot.data <- a[['data']]
+      plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+      plot.data2 <- plot.data %>%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data <- plot.data %>% select(-c('.idx', 'ethnicity_cat', 'SE'))
+      cat <- plot.data %>% filter(subgroupVar==n)
+      max.val <- max(cat$var)
+      min.val <- min(cat$var)
+      plot.data.min <- cat %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+      plot.data.max <- cat %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+      plot.data.cat <- cbind(plot.data.min, plot.data.max)
+      colnames(plot.data.cat) <- c('min.subgroupVar ', 'min.MC.status', 'min.outcomevar', 'min.CI_upper', 'min.CI_lower',
+                                   'max.subgroupVar', 'max.MC.status', 'max.outcomevar', 'max.CI_upper', 'max.CI_lower')
+      plot.data_out_simple <- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)  }
+    plot.data.all <- rbind(plot.data.all, plot.data2)
+    out <-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_fasting_dur <- rbind(mod_out_subgroup_fasting_dur, out)
+    
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary) } }
+
+#for IPAQ
+for (i in metabolite_loop) {
+  data_loop <- rename(data, var= i)
+  
+  for (j in IPAQ) {
+    data_loop_2 <- rename(data_loop, subgroupVar=j)
+    mod1 <- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs="cc") + ethnicity_cat + s(age)+ s(deprivationindex), data=data_loop_2)
+    summary <- summary(mod1) #summary of model
+    s.summary <- as_tibble(summary$s.table)
+    nval.summary <- as_tibble(summary$n)
+    dev.summary <- as_tibble(summary$dev.expl)
+    MC.summary <- s.summary[1:3,]
+    MC.summary <- MC.summary[1:3,]
+    full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+    full.summary <- full.summary %>% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp <- data_loop_2 %>% drop_na(subgroupVar)
+    mod.simple <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "subGroup" = j))
+    names(temp_loop)[1] <- paste(i, j, sep='_')
+    interaction_loop<- append(interaction_loop, temp_loop)
+    interaction_names <- append(interaction_names, paste(i, j, sep='_'))
+    
+    for (n in cats_3) {
+      plot.data_out_simple <- data.frame(matrix(ncol =16, nrow = 0))
+      a <- plot_smooths(model=mod1,series=MC.status)
+      plot.data <- a[['data']]
+      plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+      plot.data2 <- plot.data %>%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data <- plot.data %>% select(-c('.idx', 'ethnicity_cat', 'SE'))
+      cat <- plot.data %>% filter(subgroupVar==n)
+      max.val <- max(cat$var)
+      min.val <- min(cat$var)
+      plot.data.min <- cat %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+      plot.data.max <- cat %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+      plot.data.cat <- cbind(plot.data.min, plot.data.max)
+      colnames(plot.data.cat) <- c('min.subgroupVar ', 'min.MC.status', 'min.outcomevar', 'min.CI_upper', 'min.CI_lower',
+                                   'max.subgroupVar', 'max.MC.status', 'max.outcomevar', 'max.CI_upper', 'max.CI_lower')
+      plot.data_out_simple <- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a) }
+    plot.data.all <- rbind(plot.data.all, plot.data2)
+    
+    out <-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_fasting_dur <- rbind(mod_out_subgroup_fasting_dur, out)
+
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary, plot.data2) } }
+
+#interaction testing
+interaction_fun <- function(x) { anova(x$mod1, x$mod2, test='F') }
+
+interaction_out <- lapply(interaction_loop, interaction_fun)
+
+#unlist interaction test output
+interaction_dat_out <- setNames(data.frame(matrix(ncol =4, nrow = 0)), c('Fval', 'Pval', 'condition'))
+
+for (i in interaction_names) {
+  temp <- interaction_out[[i]]
+  F <- temp$F
+  pval <- temp$`Pr(>F)`
+  out <- cbind(F, pval)
+  out <- out[2,]
+  out <- out %>% as.data.frame() %>% t()
+  out <- out %>% as.data.frame() %>% mutate(Condition = paste(i)) %>% rename(interaction.F= F, interaction.pValue = pval)
+  interaction_dat_out <- rbind(interaction_dat_out, out)
+  rm(out, temp, pval, F) } 
+
+
+#merge subgroup with interaction data
+mod_out_subgroup_fasting_dur <- mod_out_subgroup_fasting_dur %>% mutate(Condition= paste(Variable, subgroup, sep='_')) %>% 
+  left_join(interaction_dat_out, by= 'Condition') %>%
+  select(-c('Condition'))
+
+
+rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
+
+write.csv(mod_out_subgroup_fasting_dur, 
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab+moderator_fasting_dur.csv')
+```
+
+# Excluding women with menstrual cycle symptoms
+```{r}
+mod_out_subgroup_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
+interaction_loop <- list()
+interaction_names <- c()
+plot.data.all <- data.frame(matrix(ncol =9, nrow = 0))
+
+#for all sub-groups except from IPAQ
+for (i in metabolite_loop) {
+  data_loop <- rename(data, var= i)
+  
+  for (j in subgroup_loop) {
+    data_loop_2 <- rename(data_loop, subgroupVar=j)
+    mod1 <- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs="cc") + ethnicity_cat + s(age)+ s(deprivationindex), data=data_loop_2)
+    summary <- summary(mod1) #summary of model
+    s.summary <- as_tibble(summary$s.table)
+    nval.summary <- as_tibble(summary$n)
+    dev.summary <- as_tibble(summary$dev.expl)
+    MC.summary <- s.summary[1:4,]
+    MC.summary <- MC.summary[1:4,]
+    full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+    full.summary <- full.summary %>% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3,4))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp <- data_loop_2 %>% drop_na(subgroupVar)
+    mod.simple <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "subGroup" = j))
+    names(temp_loop)[1] <- paste(i, j, sep='_')
+    interaction_loop<- append(interaction_loop, temp_loop)
+    interaction_names <- append(interaction_names, paste(i, j, sep='_'))
+    
+    plot.data_out_simple <- data.frame(matrix(ncol =16, nrow = 0))
+    for (n in cats_4) {
+      
+      a <- plot_smooths(model=mod1,series=MC.status)
+      plot.data <- a[['data']]
+      plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+      plot.data2 <- plot.data %>%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data <- plot.data %>% select(-c('.idx', 'ethnicity_cat', 'SE'))
+      cat <- plot.data %>% filter(subgroupVar==n)
+      max.val <- max(cat$var)
+      min.val <- min(cat$var)
+      plot.data.min <- cat %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+      plot.data.max <- cat %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+      plot.data.cat <- cbind(plot.data.min, plot.data.max)
+      colnames(plot.data.cat) <- c('min.subgroupVar ', 'min.MC.status', 'min.outcomevar', 'min.CI_upper', 'min.CI_lower',
+                                   'max.subgroupVar', 'max.MC.status', 'max.outcomevar', 'max.CI_upper', 'max.CI_lower')
+      plot.data_out_simple <- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)  }
+    plot.data.all <- rbind(plot.data.all, plot.data2)
+    out <-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_MCsymptoms <- rbind(mod_out_subgroup_MCsymptoms, out)
+    
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary) } }
+
+#for IPAQ
+for (i in metabolite_loop) {
+  data_loop <- rename(data, var= i)
+  
+  for (j in IPAQ) {
+    data_loop_2 <- rename(data_loop, subgroupVar=j)
+    mod1 <- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs="cc") + ethnicity_cat + s(age)+ s(deprivationindex), data=data_loop_2)
+    summary <- summary(mod1) #summary of model
+    s.summary <- as_tibble(summary$s.table)
+    nval.summary <- as_tibble(summary$n)
+    dev.summary <- as_tibble(summary$dev.expl)
+    MC.summary <- s.summary[1:3,]
+    MC.summary <- MC.summary[1:3,]
+    full.summary <- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) <- c( 'N val', 'Dev exp', 'MC.EDF', 'MC.Ref.df', 'MC.F', 'MC.pval')
+    full.summary <- full.summary %>% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp <- data_loop_2 %>% drop_na(subgroupVar)
+    mod.simple <- gam(var~ ethnicity_cat + s(MC.status, bs="cc") + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop <- list(temp = list("mod1" = mod1, "mod2" = mod.simple, "var" = i, "subGroup" = j))
+    names(temp_loop)[1] <- paste(i, j, sep='_')
+    interaction_loop<- append(interaction_loop, temp_loop)
+    interaction_names <- append(interaction_names, paste(i, j, sep='_'))
+    
+    for (n in cats_3) {
+      plot.data_out_simple <- data.frame(matrix(ncol =16, nrow = 0))
+      a <- plot_smooths(model=mod1,series=MC.status)
+      plot.data <- a[['data']]
+      plot.data <- plot.data %>% filter(ethnicity_cat== 1)
+      plot.data2 <- plot.data %>%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data <- plot.data %>% select(-c('.idx', 'ethnicity_cat', 'SE'))
+      cat <- plot.data %>% filter(subgroupVar==n)
+      max.val <- max(cat$var)
+      min.val <- min(cat$var)
+      plot.data.min <- cat %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
+      plot.data.max <- cat %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
+      plot.data.cat <- cbind(plot.data.min, plot.data.max)
+      colnames(plot.data.cat) <- c('min.subgroupVar ', 'min.MC.status', 'min.outcomevar', 'min.CI_upper', 'min.CI_lower',
+                                   'max.subgroupVar', 'max.MC.status', 'max.outcomevar', 'max.CI_upper', 'max.CI_lower')
+      plot.data_out_simple <- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a) }
+    plot.data.all <- rbind(plot.data.all, plot.data2)
+    
+    out <-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_MCsymptoms <- rbind(mod_out_subgroup_MCsymptoms, out)
+
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary, plot.data2) } }
+
+#interaction testing
+interaction_fun <- function(x) { anova(x$mod1, x$mod2, test='F') }
+
+interaction_out <- lapply(interaction_loop, interaction_fun)
+
+#unlist interaction test output
+interaction_dat_out <- setNames(data.frame(matrix(ncol =4, nrow = 0)), c('Fval', 'Pval', 'condition'))
+
+for (i in interaction_names) {
+  temp <- interaction_out[[i]]
+  F <- temp$F
+  pval <- temp$`Pr(>F)`
+  out <- cbind(F, pval)
+  out <- out[2,]
+  out <- out %>% as.data.frame() %>% t()
+  out <- out %>% as.data.frame() %>% mutate(Condition = paste(i)) %>% rename(interaction.F= F, interaction.pValue = pval)
+  interaction_dat_out <- rbind(interaction_dat_out, out)
+  rm(out, temp, pval, F) } 
+
+
+#merge subgroup with interaction data
+mod_out_subgroup_MCsymptoms <- mod_out_subgroup_MCsymptoms %>% mutate(Condition= paste(Variable, subgroup, sep='_')) %>% 
+  left_join(interaction_dat_out, by= 'Condition') %>%
+  select(-c('Condition'))
+
+
+rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
+
+write.csv(mod_out_subgroup_MCsymptoms, 
+          'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab+moderator_MCexcluded.csv')
+```
+
+
 
 
 #plots
@@ -352,3 +635,6 @@ Cholesterols_combined <- ggarrange(TC.plot, HDL.plot, LDL.plot, TC.HDL.plot, nco
 #save at 9 x 15
 ```
 
+``` {r}
+sessionInfo()
+```

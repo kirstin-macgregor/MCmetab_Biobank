@@ -8,7 +8,7 @@ output: html_document
 #set up environment
 ```{r setup}
 rm(list= ls())
-setwd("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Data")
+setwd("C:/Users/kirmac/OneDrive - Karolinska Institutet/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/raw")
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
@@ -58,8 +58,6 @@ MC.filtered <- mutate(MC.filtered, tyG.index1= log(GL.mg.dL*TG.ml.dL/2),
 #compute new covariate variables required for GAM analysis 
 ```{r}
 #Bodyfatp.tertiles
-
-
 Bodyfatp.tertiles <-  MC.filtered %>%
   mutate(bodyfat_p_new= (bodyfat_kg/weight_kg)*100,
     Bodyfatp.tertiles = ntile(bodyfat_p_new, 4)) %>% select(c('eid', 'Bodyfatp.tertiles'))
@@ -116,5 +114,4 @@ MC.filtered <- left_join(MC.filtered, Fitness_METs_c.tertiles, by="eid")
 #save new file for downstream analysis
 ```{r}
 write.csv(MC.filtered, 'filtered.data_20220627.csv')
-
 ```
