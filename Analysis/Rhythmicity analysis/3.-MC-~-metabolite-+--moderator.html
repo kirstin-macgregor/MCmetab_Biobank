@@ -13,11 +13,7 @@
 
 <meta name="date" content="2022-08-26" />
 
-<<<<<<< HEAD
-<title>MC ~ metabolite + mediator</title>
-=======
-<title>Association between menstrual cycle and metabolite: Mediator analysis</title>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
+<title>Association between menstrual cycle and metabolite: Moderator analysis</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -354,120 +350,125 @@ display: none;
 
 
 
-<<<<<<< HEAD
-<h1 class="title toc-ignore">MC ~ metabolite + mediator</h1>
-=======
 <h1 class="title toc-ignore">Association between menstrual cycle and
-metabolite: Mediator analysis</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
+metabolite: Moderator analysis</h1>
 <h4 class="author">Kirstin MacGregor</h4>
 <h4 class="date">2022-08-26</h4>
 
 </div>
 
 
-<<<<<<< HEAD
-<p>#set up data and arange</p>
-=======
 <div id="background" class="section level1">
 <h1>Background</h1>
 <ul>
 <li>To investigate whether the associations between menstrual cycle
-phase and metabolites were mediated by anthropometric, physical activity
-or fitness variables, GAM models fitted with a cyclic cubic regression
-spline were run that included each varioable as a continuous
-covariate.</li>
-<li>To test whether the inclusion of the covariate improved model fit,
-an F-test was conducted.</li>
+phase and metabolites differed by anthropometric, physical activity and
+fitness factors, potential moderators were coded as quartiles and
+included as an interaction term in the model.</li>
+<li>To test the association between menstrual cycle phase and
+metabolites, additive models were fitted with a cyclic cubic regression
+spline.</li>
+<li>An F test was conducted between the GAM with and wihout the
+moderator term to test whether model fit was improved.</li>
+<li>The output is plotted as a line graph with upper and lower CI for
+each metabolite and moderator variable.</li>
 </ul>
 </div>
-<div id="set-up-data-and-arrange" class="section level1">
-<h1>Set up data and arrange</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
+<div id="set-up-data-and-arange" class="section level1">
+<h1>Set up data and arange</h1>
 <pre class="r"><code>setwd(&quot;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered&quot;)
 data &lt;- read.csv(&quot;filtered.data_20220627.csv&quot;)
 
-data &lt;- data %&gt;% transform(ethnicity_cat= as.factor(ethnicity_cat),
-                           age= as.numeric(age),
-                           n_22038_0_0= as.numeric(n_22038_0_0),
-                           n_22039_0_0= as.numeric(n_22039_0_0),
-                           n_22037_0_0= as.numeric(n_22037_0_0),
-                           MET.summed= as.numeric(MET.summed))</code></pre>
-<<<<<<< HEAD
-<p>#variables for loop</p>
-=======
+#sort out IPAQ cat labels so they are 1,2,3 not 0,1,2
+data &lt;- data %&gt;% mutate(n_22032_0_0 = case_when(
+  n_22032_0_0 == 0 ~ 1,
+  n_22032_0_0 == 1 ~ 2,
+  n_22032_0_0 == 2 ~ 3))
+
+data &lt;- data %&gt;% transform(Fitness_METs_c.tertiles=as.factor(Fitness_METs_c.tertiles),
+                           muslcle.mass.perc.tertiles= as.factor(muslcle.mass.perc.tertiles),
+                           Bodyfatp.tertiles= as.factor(Bodyfatp.tertiles),
+                           handgripkg.tertiles= as.factor(handgripkg.tertiles),
+                           n_22032_0_0 = as.factor(n_22032_0_0), 
+                           deprivationindex= as.numeric(deprivationindex),
+                           ethnicity_cat= as.factor(ethnicity_cat),
+                           age= as.numeric(age))</code></pre>
 </div>
 <div id="set-up-variables-for-loop" class="section level1">
 <h1>Set up variables for loop</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
 <pre class="r"><code>metabolite_loop &lt;- c(&#39;n_30740_0_0&#39;, &#39;Tchol_0&#39;, &#39;TG_0&#39;, &#39;ldl_0&#39;, &#39;HDL_0&#39;, &#39;TC.HDL&#39;, &#39;tyG.index2&#39;)
-mediators_loop &lt;- c(&#39;CRP_0&#39;, &#39;n_30800_0_0&#39;, &#39;bmi&#39;, &#39;bodyfat_p&#39;, &#39;SMusclemasspct_c&#39;, &#39;MET.summed&#39;, &#39;handgripkg&#39;, &#39;Fitness_METs_c&#39;)
 
-interaction_fun &lt;- function(x) { anova(x$mod1, x$mod2, test=&#39;F&#39;) }</code></pre>
-<<<<<<< HEAD
-=======
+subgroup_loop &lt;- c(&#39;handgripkg.tertiles&#39;, &#39;Fitness_METs_c.tertiles&#39;, &#39;Bodyfatp.tertiles&#39;, &#39;muslcle.mass.perc.tertiles&#39;)
+cats_4 &lt;- c(&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;)
+IPAQ&lt;- &#39;n_22032_0_0&#39; #only 3 categories so will have to be done separately.
+cats_3 &lt;- c(&#39;1&#39;, &#39;2&#39;, &#39;3&#39;)</code></pre>
 </div>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
 <div id="simple-model" class="section level1">
 <h1>Simple model</h1>
-<pre class="r"><code>mod_out_simple &lt;- data.frame(matrix(ncol =22, nrow = 0))
+<pre class="r"><code>mod_out_subgroup_simple &lt;- data.frame(matrix(ncol =34, nrow = 0))
 interaction_loop &lt;- list()
 interaction_names &lt;- c()
-interaction_out_simple &lt;- setNames(data.frame(matrix(ncol =3, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
+plot.data.all &lt;- data.frame(matrix(ncol =9, nrow = 0))
 
+#for all sub-groups except from IPAQ
 for (i in metabolite_loop) {
   data_loop &lt;- rename(data, var= i)
   
-  for (j in mediators_loop) {
-  data_loop_2 &lt;- rename(data_loop, covar=j)
-  
-  mod1 &lt;- gam(var~  s(MC.status, bs=&quot;cc&quot;) + ethnicity_cat + s(age) + s(deprivationindex) + s(covar), data=data_loop_2)
-  summary &lt;- summary(mod1) #summary of model
-  s.summary &lt;- as_tibble(summary$s.table)
-  nval.summary &lt;- as_tibble(summary$n)
-  dev.summary &lt;- as_tibble(summary$dev.expl)
-  MC.summary &lt;- s.summary[1,]
-  full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
-  colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
-  full.summary &lt;- full.summary %&gt;% dplyr::mutate(Variable= paste(i), mediator = paste(j))
-  
-  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
-  dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(covar)
-  mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
-  temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;covar&quot; = j))
-  names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
-  interaction_loop&lt;- append(interaction_loop, temp_loop)
-  interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
-  
-  a &lt;- plot_smooths(model= mod1, series= MC.status)
-  plot.data &lt;- a[[&#39;data&#39;]]
-  plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
-  max.val &lt;- max(plot.data$var)
-  min.val &lt;- min(plot.data$var)
-  plot.data.max &lt;- plot.data %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.min &lt;- plot.data %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
-<<<<<<< HEAD
-  plot.data &lt;- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) &lt;- c( &#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;)
-=======
-  plot.data.ef &lt;- plot.data %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.ov &lt;- plot.data %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.ml &lt;- plot.data %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
-  colnames(plot.data) &lt;- c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                               &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
-                               &#39;ef.idx&#39;, &#39;ef.ethnicity&#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.SE&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
-                               &#39;ov.idx&#39;, &#39;ov.ethnicity&#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.SE&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
-                               &#39;ml.idx&#39;, &#39;ml.ethnicity&#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.SE&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
-  
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-  out&lt;- cbind(full.summary, plot.data)
-  
-  mod_out_simple &lt;- rbind(mod_out_simple, out)
-  
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out,
-     temp_loop) }  }</code></pre>
+  for (j in subgroup_loop) {
+    data_loop_2 &lt;- rename(data_loop, subgroupVar=j)
+    mod1 &lt;- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs=&quot;cc&quot;) + ethnicity_cat + s(age)+ s(deprivationindex), data=data_loop_2)
+    summary &lt;- summary(mod1) #summary of model
+    s.summary &lt;- as_tibble(summary$s.table)
+    nval.summary &lt;- as_tibble(summary$n)
+    dev.summary &lt;- as_tibble(summary$dev.expl)
+    MC.summary &lt;- s.summary[1:4,]
+    MC.summary &lt;- MC.summary[1:4,]
+    full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
+    full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3,4))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(subgroupVar)
+    mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;subGroup&quot; = j))
+    names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
+    interaction_loop&lt;- append(interaction_loop, temp_loop)
+    interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
+    
+    plot.data_out_simple &lt;- data.frame(matrix(ncol =25, nrow = 0))
+    for (n in cats_4) {
+      
+      a &lt;- plot_smooths(model=mod1,series=MC.status)
+      plot.data &lt;- a[[&#39;data&#39;]]
+      plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
+      plot.data2 &lt;- plot.data %&gt;%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data &lt;- plot.data %&gt;% select(-c(&#39;.idx&#39;, &#39;ethnicity_cat&#39;, &#39;SE&#39;))
+      cat &lt;- plot.data %&gt;% filter(subgroupVar==n)
+      max.val &lt;- max(cat$var)
+      min.val &lt;- min(cat$var)
+      plot.data.min &lt;- cat %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.max &lt;- cat %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ef &lt;- cat %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ov &lt;- cat %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ml &lt;- cat %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
+      
+      plot.data.cat &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+      colnames(plot.data.cat) &lt;- c(&#39;min.subgroupVar &#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
+                                   &#39;max.subgroupVar&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
+                                   &#39;ef.subgroupVar &#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
+                                   &#39;ov.subgroupVar &#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
+                                   &#39;ml.subgroupVar &#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
+      plot.data_out_simple &lt;- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)  
+      }
+    
+    plot.data.all &lt;- rbind(plot.data.all, plot.data2)
+    out &lt;-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_simple &lt;- rbind(mod_out_subgroup_simple, out)
+    
+    
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary) } }</code></pre>
 <pre><code>## Warning: Using an external vector in selections was deprecated in tidyselect 1.1.0.
 ## ℹ Please use `all_of()` or `any_of()` instead.
 ##   # Was:
@@ -492,365 +493,637 @@ for (i in metabolite_loop) {
 ## This warning is displayed once every 8 hours.
 ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
 ## generated.</code></pre>
-<pre class="r"><code>#interaction test output
-  interaction_out &lt;- lapply(interaction_loop, interaction_fun)
-  
-  for (i in interaction_names) {
-    temp &lt;- interaction_out[[i]]
-    F &lt;- temp$F
-    pval &lt;- temp$`Pr(&gt;F)`
-    out &lt;- cbind(F, pval)
-    out &lt;- out[2,]
-    out &lt;- out %&gt;% as.data.frame() %&gt;% t()
-    out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
-    interaction_out_simple &lt;- rbind(interaction_out_simple, out)
-    rm(out, pval, F, temp) } 
-
-mod_out_simple &lt;- mod_out_simple %&gt;% mutate(Condition= paste(Variable, mediator, sep=&#39;_&#39;)) %&gt;% 
-  left_join(interaction_out_simple, by= &#39;Condition&#39;) %&gt;%
-  select(-c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.SE&#39;, &#39;min.CI_lower&#39;, &#39;min.CI_upper&#39;, 
-            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.SE&#39;, &#39;max.CI_lower&#39;, &#39;max.CI_upper&#39;, &#39;Condition&#39;))
-
-rm(interaction_out_simple, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
-
-write.csv(mod_out_simple,
-&#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_simple.csv&#39;)</code></pre>
-<<<<<<< HEAD
-<p>#2. Fasting duration adjusted</p>
-=======
-</div>
-<div id="adjusting-for-fasting-duration" class="section level1">
-<h1>Adjusting for fasting duration</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-<pre class="r"><code>mod_out_fasted &lt;- data.frame(matrix(ncol =22, nrow = 0))
-interaction_loop &lt;- list()
-interaction_names &lt;- c()
-interaction_out_fasted &lt;- setNames(data.frame(matrix(ncol =3, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
-
+<pre class="r"><code>#for IPAQ
 for (i in metabolite_loop) {
   data_loop &lt;- rename(data, var= i)
   
-  for (j in mediators_loop) {
-  data_loop_2 &lt;- rename(data_loop, covar=j)
-  
-  mod1 &lt;- gam(var~  s(MC.status, bs=&quot;cc&quot;) + ethnicity_cat + s(age) + s(deprivationindex) + s(covar) + s(n_74_0_0), data=data_loop_2)
-  summary &lt;- summary(mod1) #summary of model
-  s.summary &lt;- as_tibble(summary$s.table)
-  nval.summary &lt;- as_tibble(summary$n)
-  dev.summary &lt;- as_tibble(summary$dev.expl)
-  MC.summary &lt;- s.summary[1,]
-  full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
-  colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
-  full.summary &lt;- full.summary %&gt;% dplyr::mutate(Variable= paste(i), mediator = paste(j))
-
-  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
-  dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(covar)
-  mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
-  temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;covar&quot; = j))
-  names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
-  interaction_loop&lt;- append(interaction_loop, temp_loop)
-  interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
+  for (j in IPAQ) {
+    data_loop_2 &lt;- rename(data_loop, subgroupVar=j)
+    mod1 &lt;- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs=&quot;cc&quot;) + ethnicity_cat + s(age)+ s(deprivationindex), data=data_loop_2)
+    summary &lt;- summary(mod1) #summary of model
+    s.summary &lt;- as_tibble(summary$s.table)
+    nval.summary &lt;- as_tibble(summary$n)
+    dev.summary &lt;- as_tibble(summary$dev.expl)
+    MC.summary &lt;- s.summary[1:3,]
+    MC.summary &lt;- MC.summary[1:3,]
+    full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
+    full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3))
     
-  a &lt;- plot_smooths(model= mod1, series= MC.status)
-  plot.data &lt;- a[[&#39;data&#39;]]
-  plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
-  max.val &lt;- max(plot.data$var)
-  min.val &lt;- min(plot.data$var)
-  plot.data.max &lt;- plot.data %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.min &lt;- plot.data %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
-<<<<<<< HEAD
-  plot.data &lt;- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) &lt;- c( &#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;)
-=======
-   plot.data.ef &lt;- plot.data %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.ov &lt;- plot.data %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.ml &lt;- plot.data %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
-  colnames(plot.data) &lt;- c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                               &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
-                               &#39;ef.idx&#39;, &#39;ef.ethnicity&#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.SE&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
-                               &#39;ov.idx&#39;, &#39;ov.ethnicity&#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.SE&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
-                               &#39;ml.idx&#39;, &#39;ml.ethnicity&#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.SE&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-  out&lt;- cbind(full.summary, plot.data)
-  
-  mod_out_fasted &lt;- rbind(mod_out_fasted, out) 
-  
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out, temp_loop) } }
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(subgroupVar)
+    mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;subGroup&quot; = j))
+    names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
+    interaction_loop&lt;- append(interaction_loop, temp_loop)
+    interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
+    
+    for (n in cats_3) {
+      plot.data_out_simple &lt;- data.frame(matrix(ncol =34, nrow = 0))
+      a &lt;- plot_smooths(model=mod1,series=MC.status)
+      plot.data &lt;- a[[&#39;data&#39;]]
+      plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
+      plot.data2 &lt;- plot.data %&gt;%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data &lt;- plot.data %&gt;% select(-c(&#39;.idx&#39;, &#39;ethnicity_cat&#39;, &#39;SE&#39;))
+      cat &lt;- plot.data %&gt;% filter(subgroupVar==n)
+      max.val &lt;- max(cat$var)
+      min.val &lt;- min(cat$var)
+      plot.data.min &lt;- cat %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.max &lt;- cat %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ef &lt;- cat %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ov &lt;- cat %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ml &lt;- cat %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
+      
+      plot.data.cat &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+      colnames(plot.data.cat) &lt;- c(&#39;min.subgroupVar &#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
+                                   &#39;max.subgroupVar&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
+                                   &#39;ef.subgroupVar &#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
+                                   &#39;ov.subgroupVar &#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
+                                   &#39;ml.subgroupVar &#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
+      
+      plot.data_out_simple &lt;- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a) }
+    plot.data.all &lt;- rbind(plot.data.all, plot.data2)
+    
+    out &lt;-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_simple &lt;- rbind(mod_out_subgroup_simple, out)
 
-#interaction test output
-  interaction_out &lt;- lapply(interaction_loop, interaction_fun)
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary, plot.data2) } }</code></pre>
+<pre><code>## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded</code></pre>
+<pre><code>## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded</code></pre>
+<pre class="r"><code>#interaction testing
+interaction_fun &lt;- function(x) { anova(x$mod1, x$mod2, test=&#39;F&#39;) }
+
+interaction_out &lt;- lapply(interaction_loop, interaction_fun)
+
+#unlist interaction test output
+interaction_dat_out &lt;- setNames(data.frame(matrix(ncol =4, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
+
+for (i in interaction_names) {
+  temp &lt;- interaction_out[[i]]
+  F &lt;- temp$F
+  pval &lt;- temp$`Pr(&gt;F)`
+  out &lt;- cbind(F, pval)
+  out &lt;- out[2,]
+  out &lt;- out %&gt;% as.data.frame() %&gt;% t()
+  out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
+  interaction_dat_out &lt;- rbind(interaction_dat_out, out)
+  rm(out, temp, pval, F) } 
+
+
+#merge subgroup with interaction data
+mod_out_subgroup_simple &lt;- mod_out_subgroup_simple %&gt;% mutate(Condition= paste(Variable, subgroup, sep=&#39;_&#39;)) %&gt;% 
+  left_join(interaction_dat_out, by= &#39;Condition&#39;) %&gt;%
+  select(-c(&#39;Condition&#39;))
+
+
+rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
+
+write.csv(mod_out_subgroup_simple, 
+          &#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab+moderator_simple.csv&#39;)</code></pre>
+</div>
+<div id="adjusting-for-fasting-duration" class="section level1">
+<h1>Adjusting for fasting duration</h1>
+<pre class="r"><code>mod_out_subgroup_fasting_dur &lt;- data.frame(matrix(ncol =35, nrow = 0))
+interaction_loop &lt;- list()
+interaction_names &lt;- c()
+plot.data.all &lt;- data.frame(matrix(ncol =9, nrow = 0))
+
+#for all sub-groups except from IPAQ
+for (i in metabolite_loop) {
+  data_loop &lt;- rename(data, var= i)
   
-  for (i in interaction_names) {
-    temp &lt;- interaction_out[[i]]
-    F &lt;- temp$F
-    pval &lt;- temp$`Pr(&gt;F)`
-    out &lt;- cbind(F, pval)
-    out &lt;- out[2,]
-    out &lt;- out %&gt;% as.data.frame() %&gt;% t()
-    out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
-    interaction_out_fasted &lt;- rbind(interaction_out_fasted, out)
-    rm(out, pval, F, temp) } 
+  for (j in subgroup_loop) {
+    data_loop_2 &lt;- rename(data_loop, subgroupVar=j)
+    mod1 &lt;- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs=&quot;cc&quot;) + ethnicity_cat + s(age)+ s(deprivationindex) + s(n_74_0_0), data=data_loop_2)
+    summary &lt;- summary(mod1) #summary of model
+    s.summary &lt;- as_tibble(summary$s.table)
+    nval.summary &lt;- as_tibble(summary$n)
+    dev.summary &lt;- as_tibble(summary$dev.expl)
+    MC.summary &lt;- s.summary[1:4,]
+    MC.summary &lt;- MC.summary[1:4,]
+    full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
+    full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3,4))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(subgroupVar)
+    mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex) + s(n_74_0_0), data=dat_loop_comp) 
+    temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;subGroup&quot; = j))
+    names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
+    interaction_loop&lt;- append(interaction_loop, temp_loop)
+    interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
+    
+    plot.data_out_simple &lt;- data.frame(matrix(ncol =25, nrow = 0))
+    for (n in cats_4) {
+      
+      a &lt;- plot_smooths(model=mod1,series=MC.status)
+      plot.data &lt;- a[[&#39;data&#39;]]
+      plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
+      plot.data2 &lt;- plot.data %&gt;%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data &lt;- plot.data %&gt;% select(-c(&#39;.idx&#39;, &#39;ethnicity_cat&#39;, &#39;SE&#39;))
+      cat &lt;- plot.data %&gt;% filter(subgroupVar==n)
+      max.val &lt;- max(cat$var)
+      min.val &lt;- min(cat$var)
+      plot.data.min &lt;- cat %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.max &lt;- cat %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
+       plot.data.ef &lt;- cat %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ov &lt;- cat %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ml &lt;- cat %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
+      
+      plot.data.cat &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+      colnames(plot.data.cat) &lt;- c(&#39;min.subgroupVar &#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
+                                   &#39;max.subgroupVar&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
+                                   &#39;ef.subgroupVar &#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
+                                   &#39;ov.subgroupVar &#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
+                                   &#39;ml.subgroupVar &#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
+      plot.data_out_simple &lt;- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)  }
+    plot.data.all &lt;- rbind(plot.data.all, plot.data2)
+    out &lt;-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_fasting_dur &lt;- rbind(mod_out_subgroup_fasting_dur, out)
+    
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary) } }
 
-mod_out_fasted &lt;- mod_out_fasted %&gt;% mutate(Condition= paste(Variable, mediator, sep=&#39;_&#39;)) %&gt;% 
-  left_join(interaction_out_fasted, by= &#39;Condition&#39;) %&gt;%
-  select(-c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.SE&#39;, &#39;min.CI_lower&#39;, &#39;min.CI_upper&#39;, 
-            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.SE&#39;, &#39;max.CI_lower&#39;, &#39;max.CI_upper&#39;, &#39;Condition&#39;))
+#for IPAQ
+for (i in metabolite_loop) {
+  data_loop &lt;- rename(data, var= i)
+  
+  for (j in IPAQ) {
+    data_loop_2 &lt;- rename(data_loop, subgroupVar=j)
+    mod1 &lt;- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs=&quot;cc&quot;) + ethnicity_cat + s(age)+ s(deprivationindex) + s(n_74_0_0), data=data_loop_2)
+    summary &lt;- summary(mod1) #summary of model
+    s.summary &lt;- as_tibble(summary$s.table)
+    nval.summary &lt;- as_tibble(summary$n)
+    dev.summary &lt;- as_tibble(summary$dev.expl)
+    MC.summary &lt;- s.summary[1:3,]
+    MC.summary &lt;- MC.summary[1:3,]
+    full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
+    full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(subgroupVar)
+    mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;subGroup&quot; = j))
+    names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
+    interaction_loop&lt;- append(interaction_loop, temp_loop)
+    interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
+    
+    for (n in cats_3) {
+      plot.data_out_simple &lt;- data.frame(matrix(ncol =25, nrow = 0))
+      a &lt;- plot_smooths(model=mod1,series=MC.status)
+      plot.data &lt;- a[[&#39;data&#39;]]
+      plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
+      plot.data2 &lt;- plot.data %&gt;%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data &lt;- plot.data %&gt;% select(-c(&#39;.idx&#39;, &#39;ethnicity_cat&#39;, &#39;SE&#39;))
+      cat &lt;- plot.data %&gt;% filter(subgroupVar==n)
+      max.val &lt;- max(cat$var)
+      min.val &lt;- min(cat$var)
+      plot.data.min &lt;- cat %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.max &lt;- cat %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ef &lt;- cat %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ov &lt;- cat %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ml &lt;- cat %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
+      
+      plot.data.cat &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+      colnames(plot.data.cat) &lt;- c(&#39;min.subgroupVar &#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
+                                   &#39;max.subgroupVar&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
+                                   &#39;ef.subgroupVar &#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
+                                   &#39;ov.subgroupVar &#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
+                                   &#39;ml.subgroupVar &#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
+      plot.data_out_simple &lt;- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a) }
+    plot.data.all &lt;- rbind(plot.data.all, plot.data2)
+    
+    out &lt;-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_fasting_dur &lt;- rbind(mod_out_subgroup_fasting_dur, out)
 
-rm(interaction_out_fasted, temp, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)</code></pre>
-<pre><code>## Warning in rm(interaction_out_fasted, temp, data_loop, data_loop_2,
-## interaction_out, : object &#39;temp&#39; not found</code></pre>
-<pre class="r"><code>write.csv(mod_out_fasted,
-&#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_fastingDur.csv&#39;)</code></pre>
-<<<<<<< HEAD
-<p>#3. excluding women with menstrual cycle symptoms</p>
-=======
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary, plot.data2) } }</code></pre>
+<pre><code>## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
+
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded</code></pre>
+<pre class="r"><code>#interaction testing
+interaction_fun &lt;- function(x) { anova(x$mod1, x$mod2, test=&#39;F&#39;) }
+
+interaction_out &lt;- lapply(interaction_loop, interaction_fun)
+
+#unlist interaction test output
+interaction_dat_out &lt;- setNames(data.frame(matrix(ncol =4, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
+
+for (i in interaction_names) {
+  temp &lt;- interaction_out[[i]]
+  F &lt;- temp$F
+  pval &lt;- temp$`Pr(&gt;F)`
+  out &lt;- cbind(F, pval)
+  out &lt;- out[2,]
+  out &lt;- out %&gt;% as.data.frame() %&gt;% t()
+  out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
+  interaction_dat_out &lt;- rbind(interaction_dat_out, out)
+  rm(out, temp, pval, F) } 
+
+
+#merge subgroup with interaction data
+mod_out_subgroup_fasting_dur &lt;- mod_out_subgroup_fasting_dur %&gt;% mutate(Condition= paste(Variable, subgroup, sep=&#39;_&#39;)) %&gt;% 
+  left_join(interaction_dat_out, by= &#39;Condition&#39;) %&gt;%
+  select(-c(&#39;Condition&#39;))
+
+
+rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
+
+write.csv(mod_out_subgroup_fasting_dur, 
+          &#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab+moderator_fasting_dur.csv&#39;)</code></pre>
 </div>
 <div id="excluding-women-with-menstrual-cycle-symptoms" class="section level1">
 <h1>Excluding women with menstrual cycle symptoms</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-<pre class="r"><code>data.n_21050_0_0 &lt;- data %&gt;% filter(n_21050_0_0 == &quot;-601&quot; | n_21050_0_0 == &quot;-602&quot;)
+<pre class="r"><code># Exclude women with reported MC symptoms
+data.n_21050_0_0 &lt;- data %&gt;% filter(n_21050_0_0 == &quot;-601&quot; | n_21050_0_0 == &quot;-602&quot;)
 data.n_21026_0_0 &lt;- data %&gt;% filter(n_21026_0_0 == &quot;1&quot;)
 Data.MCsymptoms &lt;- rbind(data.n_21050_0_0, data.n_21026_0_0)
 data_MC &lt;- anti_join(data, Data.MCsymptoms, by = &#39;eid&#39;)
 rm(data.n_21050_0_0, data.n_21026_0_0, Data.MCsymptoms)
 
-mod_out_MCsymptoms &lt;- data.frame(matrix(ncol =22, nrow = 0))
-
+mod_out_subgroup_MCsymptoms &lt;- data.frame(matrix(ncol =34, nrow = 0))
 interaction_loop &lt;- list()
 interaction_names &lt;- c()
-interaction_out_MC &lt;- setNames(data.frame(matrix(ncol =3, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
+plot.data.all &lt;- data.frame(matrix(ncol =9, nrow = 0))
 
+#for all sub-groups except from IPAQ
 for (i in metabolite_loop) {
   data_loop &lt;- rename(data_MC, var= i)
   
-  for (j in mediators_loop) {
-  data_loop_2 &lt;- rename(data_loop, covar=j)
+  for (j in subgroup_loop) {
+    data_loop_2 &lt;- rename(data_loop, subgroupVar=j)
+    mod1 &lt;- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs=&quot;cc&quot;) + ethnicity_cat + s(age)+ s(deprivationindex), data=data_loop_2)
+    summary &lt;- summary(mod1) #summary of model
+    s.summary &lt;- as_tibble(summary$s.table)
+    nval.summary &lt;- as_tibble(summary$n)
+    dev.summary &lt;- as_tibble(summary$dev.expl)
+    MC.summary &lt;- s.summary[1:4,]
+    MC.summary &lt;- MC.summary[1:4,]
+    full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
+    full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3,4))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(subgroupVar)
+    mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;subGroup&quot; = j))
+    names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
+    interaction_loop&lt;- append(interaction_loop, temp_loop)
+    interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
+    
+    plot.data_out_simple &lt;- data.frame(matrix(ncol =25, nrow = 0))
+    for (n in cats_4) {
+      
+      a &lt;- plot_smooths(model=mod1,series=MC.status)
+      plot.data &lt;- a[[&#39;data&#39;]]
+      plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
+      plot.data2 &lt;- plot.data %&gt;%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data &lt;- plot.data %&gt;% select(-c(&#39;.idx&#39;, &#39;ethnicity_cat&#39;, &#39;SE&#39;))
+      cat &lt;- plot.data %&gt;% filter(subgroupVar==n)
+      max.val &lt;- max(cat$var)
+      min.val &lt;- min(cat$var)
+      plot.data.min &lt;- cat %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.max &lt;- cat %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ef &lt;- cat %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ov &lt;- cat %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ml &lt;- cat %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
+      
+      plot.data.cat &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+      colnames(plot.data.cat) &lt;- c(&#39;min.subgroupVar &#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
+                                   &#39;max.subgroupVar&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
+                                   &#39;ef.subgroupVar &#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
+                                   &#39;ov.subgroupVar &#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
+                                   &#39;ml.subgroupVar &#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
+      plot.data_out_simple &lt;- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a)  }
+    plot.data.all &lt;- rbind(plot.data.all, plot.data2)
+    out &lt;-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_MCsymptoms &lt;- rbind(mod_out_subgroup_MCsymptoms, out)
+    
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary) } }
+
+#for IPAQ
+for (i in metabolite_loop) {
+  data_loop &lt;- rename(data, var= i)
   
-  mod1 &lt;- gam(var~  s(MC.status, bs=&quot;cc&quot;) + ethnicity_cat + s(age) + s(deprivationindex) + s(covar), data=data_loop_2)
-  summary &lt;- summary(mod1) #summary of model
-  s.summary &lt;- as_tibble(summary$s.table)
-  nval.summary &lt;- as_tibble(summary$n)
-  dev.summary &lt;- as_tibble(summary$dev.expl)
-  MC.summary &lt;- s.summary[1,]
-  full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
-  colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
-  full.summary &lt;- full.summary %&gt;% dplyr::mutate(Variable= paste(i), mediator = paste(j))
+  for (j in IPAQ) {
+    data_loop_2 &lt;- rename(data_loop, subgroupVar=j)
+    mod1 &lt;- gam(var~ subgroupVar + s(MC.status, by=subgroupVar, bs=&quot;cc&quot;) + ethnicity_cat + s(age)+ s(deprivationindex), data=data_loop_2)
+    summary &lt;- summary(mod1) #summary of model
+    s.summary &lt;- as_tibble(summary$s.table)
+    nval.summary &lt;- as_tibble(summary$n)
+    dev.summary &lt;- as_tibble(summary$dev.expl)
+    MC.summary &lt;- s.summary[1:3,]
+    MC.summary &lt;- MC.summary[1:3,]
+    full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
+    colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
+    full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i), subgroup= paste(j), Level = c(1,2,3))
+    
+    #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
+    dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(subgroupVar)
+    mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
+    temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;subGroup&quot; = j))
+    names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
+    interaction_loop&lt;- append(interaction_loop, temp_loop)
+    interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
+    
+    for (n in cats_3) {
+      plot.data_out_simple &lt;- data.frame(matrix(ncol =25, nrow = 0))
+      a &lt;- plot_smooths(model=mod1,series=MC.status)
+      plot.data &lt;- a[[&#39;data&#39;]]
+      plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
+      plot.data2 &lt;- plot.data %&gt;%  mutate(Variable= paste(i), Subgroup= paste(j))
+      plot.data &lt;- plot.data %&gt;% select(-c(&#39;.idx&#39;, &#39;ethnicity_cat&#39;, &#39;SE&#39;))
+      cat &lt;- plot.data %&gt;% filter(subgroupVar==n)
+      max.val &lt;- max(cat$var)
+      min.val &lt;- min(cat$var)
+      plot.data.min &lt;- cat %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.max &lt;- cat %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ef &lt;- cat %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ov &lt;- cat %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
+      plot.data.ml &lt;- cat %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
+      
+      plot.data.cat &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+      colnames(plot.data.cat) &lt;- c(&#39;min.subgroupVar &#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
+                                   &#39;max.subgroupVar&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
+                                   &#39;ef.subgroupVar &#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
+                                   &#39;ov.subgroupVar &#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
+                                   &#39;ml.subgroupVar &#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
+      plot.data_out_simple &lt;- rbind(plot.data_out_simple, plot.data.cat) 
+      rm(cat, min.val, max.val, plot.data.min, plot.data.cat, a) }
+    plot.data.all &lt;- rbind(plot.data.all, plot.data2)
+    
+    out &lt;-cbind(full.summary, plot.data_out_simple)
+    mod_out_subgroup_MCsymptoms &lt;- rbind(mod_out_subgroup_MCsymptoms, out)
 
-  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
-  dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(covar)
-  mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
-  temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;covar&quot; = j))
-  names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
-  interaction_loop&lt;- append(interaction_loop, temp_loop)
-  interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
-  
-  a &lt;- plot_smooths(model= mod1, series= MC.status)
-  plot.data &lt;- a[[&#39;data&#39;]]
-  plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
-  max.val &lt;- max(plot.data$var)
-  min.val &lt;- min(plot.data$var)
-  plot.data.max &lt;- plot.data %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.min &lt;- plot.data %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
-<<<<<<< HEAD
-  plot.data &lt;- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) &lt;- c( &#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;)
-=======
-  plot.data.ef &lt;- plot.data %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.ov &lt;- plot.data %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data.ml &lt;- plot.data %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
-  colnames(plot.data) &lt;- c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                               &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
-                               &#39;ef.idx&#39;, &#39;ef.ethnicity&#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.SE&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
-                               &#39;ov.idx&#39;, &#39;ov.ethnicity&#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.SE&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
-                               &#39;ml.idx&#39;, &#39;ml.ethnicity&#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.SE&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-  out&lt;- cbind(full.summary, plot.data)
-  
-  mod_out_MCsymptoms &lt;- rbind(mod_out_MCsymptoms, out) 
-  
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out, temp_loop) } }
+    rm(mod1, summary, s.summary, nval.summary, MC.summary, full.summary, plot.data, plot.data_out_simple, dat_loop_comp, data_loop_2, out, plot.data.max,
+       temp_loop, mod.simple, dev.summary, plot.data2) } }</code></pre>
+<pre><code>## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
 
-#interaction test output
-  interaction_out &lt;- lapply(interaction_loop, interaction_fun)
-  
-  for (i in interaction_names) {
-    temp &lt;- interaction_out[[i]]
-    F &lt;- temp$F
-    pval &lt;- temp$`Pr(&gt;F)`
-    out &lt;- cbind(F, pval)
-    out &lt;- out[2,]
-    out &lt;- out %&gt;% as.data.frame() %&gt;% t()
-    out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
-    interaction_out_MC &lt;- rbind(interaction_out_MC, out)
-    rm(out, pval, F, temp, out) } </code></pre>
-<pre><code>## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+## Warning in data.frame(..., check.names = FALSE): row names were found from a
+## short variable and have been discarded</code></pre>
+<pre class="r"><code>#interaction testing
+interaction_fun &lt;- function(x) { anova(x$mod1, x$mod2, test=&#39;F&#39;) }
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+interaction_out &lt;- lapply(interaction_loop, interaction_fun)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+#unlist interaction test output
+interaction_dat_out &lt;- setNames(data.frame(matrix(ncol =4, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+for (i in interaction_names) {
+  temp &lt;- interaction_out[[i]]
+  F &lt;- temp$F
+  pval &lt;- temp$`Pr(&gt;F)`
+  out &lt;- cbind(F, pval)
+  out &lt;- out[2,]
+  out &lt;- out %&gt;% as.data.frame() %&gt;% t()
+  out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
+  interaction_dat_out &lt;- rbind(interaction_dat_out, out)
+  rm(out, temp, pval, F) } 
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+#merge subgroup with interaction data
+mod_out_subgroup_MCsymptoms &lt;- mod_out_subgroup_MCsymptoms %&gt;% mutate(Condition= paste(Variable, subgroup, sep=&#39;_&#39;)) %&gt;% 
+  left_join(interaction_dat_out, by= &#39;Condition&#39;) %&gt;%
+  select(-c(&#39;Condition&#39;))
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+rm(interaction_loop, interaction_out, interaction_dat_out, data_loop)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+write.csv(mod_out_subgroup_MCsymptoms, 
+          &#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab+moderator_MCexcluded.csv&#39;)</code></pre>
+</div>
+<div id="plots" class="section level1">
+<h1>Plots</h1>
+<pre class="r"><code>plot.data.all &lt;- plot.data.all %&gt;%  mutate(Variable = replace(Variable, Variable==&quot;n_30740_0_0&quot;, &quot;Glucose&quot;),
+                                       Variable = replace(Variable, Variable==&quot;Tchol_0&quot;, &quot;TotalCholesterol&quot;),
+                                       Variable = replace(Variable, Variable==&quot;TG_0&quot;, &quot;Triglyceride&quot;),
+                                       Variable = replace(Variable, Variable==&quot;ldl_0&quot;, &quot;LDL&quot;),
+                                       Variable = replace(Variable, Variable==&quot;HDL_0&quot;, &quot;HDL&quot;),
+                                       Variable = replace(Variable, Variable==&quot;TC.HDL&quot;, &quot;Total.HDLCholesterol&quot;),
+                                       Variable = replace(Variable, Variable==&quot;tyG.index2&quot;, &quot;TyG&quot;),
+                                       Subgroup = replace(Subgroup, Subgroup== &#39;handgripkg.tertiles&#39;, &#39;Grip strength&#39;),
+                                       Subgroup = replace(Subgroup, Subgroup== &#39;Fitness_METs_c.tertiles&#39;, &#39;Cardiorespiratory fitness&#39;),
+                                       Subgroup = replace(Subgroup, Subgroup== &#39;Bodyfatp.tertiles&#39;, &#39;Fat mass&#39;),
+                                       Subgroup = replace(Subgroup, Subgroup== &#39;muslcle.mass.perc.tertiles&#39;, &#39;Fat-free mass&#39;),
+                                       Subgroup = replace(Subgroup, Subgroup== &#39;n_22032_0_0&#39;, &#39;Physical activity&#39;))
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+metabolite_loop &lt;- c(&quot;Glucose&quot;, &quot;TotalCholesterol&quot;, &quot;Triglyceride&quot;, &quot;LDL&quot;, &quot;HDL&quot;, &quot;Total.HDLCholesterol&quot;, &quot;TyG&quot;)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+#sort out the factor level orders
+plot.data.all$Subgroup &lt;- factor(plot.data.all$Subgroup, levels =c(&#39;Fat mass&#39;, &#39;Fat-free mass&#39;,&#39;Grip strength&#39;, &#39;Cardiorespiratory fitness&#39;, &#39;Physical activity&#39;))
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+# Sig labels
+sig_labs &lt;- data.frame(Subgroup =c(&#39;Fat mass&#39;, &#39;Fat-free mass&#39;,&#39;Grip strength&#39;, &#39;Cardiorespiratory fitness&#39;, &#39;Physical activity&#39;),
+                      glucose= c(&quot;&quot;, &quot;1&quot;, &quot;2&quot;, &quot;2&quot;, &quot;1&quot;),
+                      HDL= c(&quot;1, 2, 3&quot;, &quot;1, 2, 3&quot;, &quot;1, 2, 3, 4&quot;, &quot;2&quot;, &quot;1, 2, 3&quot;),
+                      LDL= c(&quot;3&quot;, &quot;3&quot;, &quot;4&quot;, &quot;&quot;, &quot;2&quot;),
+                      TotalCholesterol= c(&quot;1, 3, 4&quot;, &quot;1, 3, 4&quot;, &quot;4&quot;, &quot;&quot;, &quot;1, 2&quot;),
+                      Total.HDLCholesterol= c(&quot;2, 3&quot;, &quot;3, 4&quot;, &quot;&quot;, &quot;1, 2&quot;, &quot;&quot;),
+                      Triglyceride= c(&quot;3, 4&quot;, &quot;4&quot;, &quot;&quot;, &quot;1&quot;, &quot;&quot;),
+                      TyG= c(&quot;3, 4&quot;, &quot;4&quot;, &quot;&quot;, &quot;2&quot;, &quot;&quot;))
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+for (i in metabolite_loop) {
+  plot.dat.temp &lt;- plot.data.all %&gt;%  filter(Variable == i)
+  assign(paste(&#39;plot.dat&#39;, i, sep=&#39;_&#39;), plot.dat.temp)
+  rm(plot.dat.temp) }
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+Glucose_plot &lt;- ggplot(data=plot.dat_Glucose)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
+        scale_fill_manual(values = c(&quot;#440154FF&quot;, &quot;#39568CFF&quot;, &quot;#55C667FF&quot;, &quot;#DCE319FF&quot;))+
+        scale_linetype_manual(values=c(&quot;solid&quot;, &quot;dotted&quot;, &quot;longdash&quot;, &quot;dotdash&quot;))+
+        labs(y = &quot;Glucose (mmol/L)&quot;, x= &quot;Menstrual cycle status&quot;) + 
+        ylim(4.6,5.3)+
+        facet_wrap(~Subgroup, ncol=7)+
+        theme(axis.line = element_line(colour = &quot;black&quot;),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              axis.title.x =element_blank())+
+        geom_text(x = 0.9, y = 5.3, aes(label = glucose), data = sig_labs)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+Triglyceride_plot &lt;- ggplot(data=plot.dat_Triglyceride)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar ), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
+        scale_fill_manual(values = c(&quot;#440154FF&quot;, &quot;#39568CFF&quot;, &quot;#55C667FF&quot;, &quot;#DCE319FF&quot;))+
+        scale_linetype_manual(values=c(&quot;solid&quot;, &quot;dotted&quot;, &quot;longdash&quot;, &quot;dotdash&quot;))+
+        labs(y = &quot;Triglyceride (mmol/L)&quot;, x= &quot;Menstrual cycle status&quot;) + 
+        ylim(0.8,1.8)+
+        facet_wrap(~Subgroup, ncol=7)+
+        theme(axis.line = element_line(colour = &quot;black&quot;),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank(),
+              axis.title.x =element_blank())+
+        geom_text(x = 0.9, y = 1.8, aes(label = Triglyceride), data = sig_labs)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+TyG_plot &lt;- ggplot(data=plot.dat_TyG)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar ), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
+        scale_fill_manual(values = c(&quot;#440154FF&quot;, &quot;#39568CFF&quot;, &quot;#55C667FF&quot;, &quot;#DCE319FF&quot;))+
+        scale_linetype_manual(values=c(&quot;solid&quot;, &quot;dotted&quot;, &quot;longdash&quot;, &quot;dotdash&quot;))+
+        labs(y = &quot;TyG index (mmol/L)&quot;,  x= &quot;Menstrual cycle status&quot;) + 
+        ylim(4.2,4.8)+
+        facet_wrap(~Subgroup, ncol=7)+
+        theme(axis.line = element_line(colour = &quot;black&quot;),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank(),
+              axis.title.x =element_blank())+
+        geom_text(x = 0.9, y = 4.8, aes(label = TyG), data = sig_labs)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+TC.plot &lt;- ggplot(data=plot.dat_TotalCholesterol)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
+        scale_fill_manual(values = c(&quot;#440154FF&quot;, &quot;#39568CFF&quot;, &quot;#55C667FF&quot;, &quot;#DCE319FF&quot;))+
+        scale_linetype_manual(values=c(&quot;solid&quot;, &quot;dotted&quot;, &quot;longdash&quot;, &quot;dotdash&quot;))+
+        labs(y = &quot;Total cholesterol (mmol/L)&quot;,  x= &quot;Menstrual cycle status&quot;) + 
+        ylim(4.9,5.9)+
+        facet_wrap(~Subgroup, ncol=7)+
+        theme(axis.line = element_line(colour = &quot;black&quot;),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              axis.title.x =element_blank())+
+        geom_text(x = 0.9, y = 5.9, aes(label = TotalCholesterol), data = sig_labs)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+HDL.plot &lt;- ggplot(data=plot.dat_HDL)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar ), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
+        scale_fill_manual(values = c(&quot;#440154FF&quot;, &quot;#39568CFF&quot;, &quot;#55C667FF&quot;, &quot;#DCE319FF&quot;))+
+        scale_linetype_manual(values=c(&quot;solid&quot;, &quot;dotted&quot;, &quot;longdash&quot;, &quot;dotdash&quot;))+
+        labs(y = &quot;HDL (mmol/L)&quot;, x= &quot;Menstrual cycle status&quot;) + 
+        ylim(1.2,1.9)+
+        facet_wrap(~Subgroup, ncol=7)+
+        theme(axis.line = element_line(colour = &quot;black&quot;),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank(),
+              axis.title.x =element_blank())+
+        geom_text(x = 0.9, y = 1.9, aes(label = HDL), data = sig_labs)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+LDL.plot &lt;- ggplot(data=plot.dat_LDL)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar ), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
+        scale_fill_manual(values = c(&quot;#440154FF&quot;, &quot;#39568CFF&quot;, &quot;#55C667FF&quot;, &quot;#DCE319FF&quot;))+
+        scale_linetype_manual(values=c(&quot;solid&quot;, &quot;dotted&quot;, &quot;longdash&quot;, &quot;dotdash&quot;))+
+        labs(y = &quot;LDL (mmol/L)&quot;, x= &quot;Menstrual cycle status&quot;) + 
+        ylim(2.9,3.7)+
+        facet_wrap(~Subgroup, ncol=7)+
+        theme(axis.line = element_line(colour = &quot;black&quot;),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank(),
+              axis.title.x =element_blank())+
+        geom_text(x = 0.9, y = 3.7, aes(label = LDL), data = sig_labs)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+TC.HDL.plot &lt;- ggplot(data=plot.dat_Total.HDLCholesterol)+
+        geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=subgroupVar ), alpha = 0.5)+
+        geom_line(aes(y=var, x=MC.status, linetype=subgroupVar))+
+        scale_fill_manual(values = c(&quot;#440154FF&quot;, &quot;#39568CFF&quot;, &quot;#55C667FF&quot;, &quot;#DCE319FF&quot;))+
+        scale_linetype_manual(values=c(&quot;solid&quot;, &quot;dotted&quot;, &quot;longdash&quot;, &quot;dotdash&quot;))+
+        labs(y = &quot;Total cholesterol:HDL (mmol/L)&quot;,
+             x= &quot;Menstrual cycle status&quot;) + 
+        ylim(3,4.5)+
+       facet_wrap(~Subgroup, ncol=7)+
+        theme(axis.line = element_line(colour = &quot;black&quot;),
+              panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.border = element_blank(),
+              panel.background = element_blank(),
+              strip.background = element_blank(),
+              strip.text.x = element_blank())+
+        geom_text(x = 0.9, y = 4.5, aes(label = Total.HDLCholesterol), data = sig_labs)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+GL.TGL.TyG_combined &lt;- ggarrange(Glucose_plot, Triglyceride_plot, TyG_plot, ncol=1,
+                      common.legend = TRUE, legend = &quot;bottom&quot;)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+Cholesterols_combined &lt;- ggarrange(TC.plot, HDL.plot, LDL.plot, TC.HDL.plot, ncol=1,
+                      common.legend = TRUE, legend = &quot;bottom&quot;)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
+# Save plots
+ggsave(GL.TGL.TyG_combined,
+       filename= &quot;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab_moderator_Gl_Tg_TyG.pdf&quot;, 
+       height= 7,
+       width= 15)
 
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found</code></pre>
-<pre class="r"><code>mod_out_MCsymptoms &lt;- mod_out_MCsymptoms %&gt;% mutate(Condition= paste(Variable, mediator, sep=&#39;_&#39;)) %&gt;% 
-  left_join(interaction_out_MC, by= &#39;Condition&#39;) %&gt;%
-  select(-c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.SE&#39;, &#39;min.CI_lower&#39;, &#39;min.CI_upper&#39;, 
-            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.SE&#39;, &#39;max.CI_lower&#39;, &#39;max.CI_upper&#39;, &#39;Condition&#39;))
-
-rm(interaction_out_MC, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
-
-write.csv(mod_out_MCsymptoms,
-&#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_MCexcluded.csv&#39;)</code></pre>
-<<<<<<< HEAD
-=======
-<pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>## R version 4.3.1 (2023-06-16 ucrt)
-## Platform: x86_64-w64-mingw32/x64 (64-bit)
-## Running under: Windows 11 x64 (build 22621)
-## 
-## Matrix products: default
-## 
-## 
-## locale:
-## [1] LC_COLLATE=English_Sweden.utf8  LC_CTYPE=English_Sweden.utf8   
-## [3] LC_MONETARY=English_Sweden.utf8 LC_NUMERIC=C                   
-## [5] LC_TIME=English_Sweden.utf8    
-## 
-## time zone: Europe/London
-## tzcode source: internal
-## 
-## attached base packages:
-## [1] stats     graphics  grDevices utils     datasets  methods   base     
-## 
-## other attached packages:
-##  [1] ggpubr_0.6.0      viridis_0.6.4     viridisLite_0.4.2 tidymv_3.4.2     
-##  [5] mgcv_1.8-42       nlme_3.1-162      lme4_1.1-34       Matrix_1.6-0     
-##  [9] lubridate_1.9.2   forcats_1.0.0     stringr_1.5.0     dplyr_1.1.2      
-## [13] purrr_1.0.1       readr_2.1.4       tidyr_1.3.0       tibble_3.2.1     
-## [17] ggplot2_3.4.2     tidyverse_2.0.0  
-## 
-## loaded via a namespace (and not attached):
-##  [1] sass_0.4.7        utf8_1.2.3        generics_0.1.3    rstatix_0.7.2    
-##  [5] stringi_1.7.12    lattice_0.21-8    hms_1.1.3         digest_0.6.33    
-##  [9] magrittr_2.0.3    evaluate_0.21     grid_4.3.1        timechange_0.2.0 
-## [13] fastmap_1.1.1     jsonlite_1.8.7    backports_1.4.1   gridExtra_2.3    
-## [17] fansi_1.0.4       scales_1.2.1      jquerylib_0.1.4   abind_1.4-5      
-## [21] cli_3.6.1         crayon_1.5.2      rlang_1.1.1       munsell_0.5.0    
-## [25] splines_4.3.1     withr_2.5.0       cachem_1.0.8      yaml_2.3.7       
-## [29] tools_4.3.1       tzdb_0.4.0        ggsignif_0.6.4    nloptr_2.0.3     
-## [33] minqa_1.2.5       colorspace_2.1-0  boot_1.3-28.1     broom_1.0.5      
-## [37] vctrs_0.6.2       R6_2.5.1          lifecycle_1.0.3   car_3.1-2        
-## [41] MASS_7.3-60       pkgconfig_2.0.3   pillar_1.9.0      bslib_0.5.0      
-## [45] gtable_0.3.3      Rcpp_1.0.11       glue_1.6.2        xfun_0.39        
-## [49] tidyselect_1.2.0  rstudioapi_0.15.0 knitr_1.43        htmltools_0.5.5  
-## [53] carData_3.0-5     rmarkdown_2.23    compiler_4.3.1</code></pre>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
+ggsave(Cholesterols_combined,
+       filename= &quot;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Moderator/MC~metab_moderator_lipids.pdf&quot;, 
+       height= 9,
+       width= 15)</code></pre>
 </div>
 
 

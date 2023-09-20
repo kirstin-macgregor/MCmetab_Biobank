@@ -7,6 +7,11 @@ editor_options:
   chunk_output_type: console
 ---
 
+#Background
+
+* To test the association between menstrual cycle phase and metabolites, additive models were fitted with a cyclic cubic regression spline.
+* The output is plotted as a line graph with upper and lower CI for each metabolite and moderator varaible.
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -18,7 +23,7 @@ library(tidymv)
 rm(list= ls())
 ```
 
-
+# Set up data and arrange
 ```{r}
 data <- read.csv("P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered/filtered.data_20220627.csv")
 
@@ -35,9 +40,9 @@ data <- data %>% transform(ethnicity_cat= as.factor(ethnicity_cat),
 variables<- c('n_30740_0_0', 'Tchol_0', 'TG_0', 'ldl_0', 'HDL_0', 'TC.HDL', 'tyG.index2', 'weight_kg', 'height', 'bmi', 'bodyfat_kg', 'bodyfatfreemass', 'SMusclemasspct_c', 'bodyfat_p', 'n_30800_0_0', 'n_30770_0_0', 'CRP_0', 'n_22038_0_0', 'HbA1c_0', 'n_22039_0_0', 'n_22037_0_0', 'MET.summed', 'handgripkg', 'Fitness_METs_c')
 ```
 
-#model 1: simple model
+# Simple model
 ```{r}
-mod_out_simple <- data.frame(matrix(ncol =22, nrow = 0))
+mod_out_simple <- data.frame(matrix(ncol =24, nrow = 0))
 
 for (i in variables) {
   data_loop <- rename(data, var= i)
@@ -60,25 +65,34 @@ for (i in variables) {
   min.val <- min(plot.data$var)
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
   plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
-  plot.data <- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  plot.data.ef <- plot.data %>% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %>% distinct(var, .keep_all= TRUE)
+  plot.data.ov <- plot.data %>% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %>% distinct(var, .keep_all= TRUE)
+  plot.data.ml <- plot.data %>% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max, plot.data.ef, plot.data.ov, plot.data.ml)
+  colnames(plot.data) <- c('min.idx', 'min.ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                               'max.idx', 'max.ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower',
+                               'ef.idx', 'ef.ethnicity', 'ef.MC.status', 'ef.outcomevar', 'ef.SE', 'ef.CI_upper', 'ef.CI_lower',
+                               'ov.idx', 'ov.ethnicity', 'ov.MC.status', 'ov.outcomevar', 'ov.SE', 'ov.CI_upper', 'ov.CI_lower',
+                               'ml.idx', 'ml.ethnicity', 'ml.MC.status', 'ml.outcomevar', 'ml.SE', 'ml.CI_upper', 'ml.CI_lower')
   
-  out<- cbind(full.summary, plot.data)
+  summary_loop <- data_loop |> summarise(mean= mean(var, na.rm = T),
+                                         sd= sd(var, na.rm = T))
+  
+  
+  out<- cbind(full.summary, plot.data, summary_loop)
 
   mod_out_simple <- rbind(mod_out_simple, out)
   
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
-     plot.data.max, plot.data.min, out) }
+     plot.data.max, plot.data.min, out, summary_loop) }
 
 write.csv(mod_out_simple,
           'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_simple.csv')
 ```
 
-
-#model 2: adjusted for fasting duration
+# Adjusting for fasting duration
 ```{r}
-mod_out_fastingDur <- data.frame(matrix(ncol =22, nrow = 0))
+mod_out_fastingDur <- data.frame(matrix(ncol =24, nrow = 0))
 
 for (i in variables) {
   data_loop <- rename(data, var= i)
@@ -99,28 +113,37 @@ for (i in variables) {
   min.val <- min(plot.data$var)
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
   plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
-  plot.data <- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  plot.data.ef <- plot.data %>% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %>% distinct(var, .keep_all= TRUE)
+  plot.data.ov <- plot.data %>% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %>% distinct(var, .keep_all= TRUE)
+  plot.data.ml <- plot.data %>% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max, plot.data.ef, plot.data.ov, plot.data.ml)
+  colnames(plot.data) <- c('min.idx', 'min.ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                               'max.idx', 'max.ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower',
+                               'ef.idx', 'ef.ethnicity', 'ef.MC.status', 'ef.outcomevar', 'ef.SE', 'ef.CI_upper', 'ef.CI_lower',
+                               'ov.idx', 'ov.ethnicity', 'ov.MC.status', 'ov.outcomevar', 'ov.SE', 'ov.CI_upper', 'ov.CI_lower',
+                               'ml.idx', 'ml.ethnicity', 'ml.MC.status', 'ml.outcomevar', 'ml.SE', 'ml.CI_upper', 'ml.CI_lower')
   
-  out<- cbind(full.summary, plot.data)
+  summary_loop <- data_loop |> summarise(mean= mean(var, na.rm = T),
+                                         sd= sd(var, na.rm = T))
+  
+  out<- cbind(full.summary, plot.data, summary_loop)
   mod_out_fastingDur <- rbind(mod_out_fastingDur, out)
   
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
-     plot.data.max, plot.data.min, out) }
+     plot.data.max, plot.data.min, out, summary_loop) }
 
 write.csv(mod_out_fastingDur, 'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_fastingDur.csv')
 ```
 
-#3. excluding women with menstrual cycle symptoms
+# Excluding women with menstrual cycle symptoms
 ```{r}
 data.n_21050_0_0 <- data %>% filter(n_21050_0_0 == "-601" | n_21050_0_0 == "-602")
 data.n_21026_0_0 <- data %>% filter(n_21026_0_0 == "1")
 Data.MCsymptoms <- rbind(data.n_21050_0_0, data.n_21026_0_0)
 data_MC <- anti_join(data, Data.MCsymptoms, by = 'eid')
 
-mod_out_MCsymptoms <- data.frame(matrix(ncol =22, nrow = 0))
-
+mod_out_MCsymptoms <- data.frame(matrix(ncol =4, nrow = 0))
+i = "n_30740_0_0"
 for (i in variables) {
   data_loop <- rename(data_MC, var= i)
   
@@ -141,22 +164,32 @@ for (i in variables) {
   min.val <- min(plot.data$var)
   plot.data.max <- plot.data %>% filter(var == max.val) %>% distinct(var, .keep_all= TRUE)
   plot.data.min <- plot.data %>% filter(var == min.val) %>% distinct(var, .keep_all= TRUE)
-  plot.data <- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) <- c( 'idx', 'ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
-                            'idx', 'ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_upper')
+  plot.data.ef <- plot.data %>% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %>% distinct(var, .keep_all= TRUE)
+  plot.data.ov <- plot.data %>% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %>% distinct(var, .keep_all= TRUE)
+  plot.data.ml <- plot.data %>% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %>% distinct(var, .keep_all= TRUE)
+  plot.data <- cbind(plot.data.min, plot.data.max, plot.data.ef, plot.data.ov, plot.data.ml)
+  colnames(plot.data) <- c('min.idx', 'min.ethnicity', 'min.MC.status', 'min.outcomevar', 'min.SE', 'min.CI_upper', 'min.CI_lower',
+                               'max.idx', 'max.ethnicity', 'max.MC.status', 'max.outcomevar', 'max.SE', 'max.CI_upper', 'max.CI_lower',
+                               'ef.idx', 'ef.ethnicity', 'ef.MC.status', 'ef.outcomevar', 'ef.SE', 'ef.CI_upper', 'ef.CI_lower',
+                               'ov.idx', 'ov.ethnicity', 'ov.MC.status', 'ov.outcomevar', 'ov.SE', 'ov.CI_upper', 'ov.CI_lower',
+                               'ml.idx', 'ml.ethnicity', 'ml.MC.status', 'ml.outcomevar', 'ml.SE', 'ml.CI_upper', 'ml.CI_lower')
   
-  out<- cbind(full.summary, plot.data)
+  summary_loop <- data_loop |> summarise(mean= mean(var, na.rm = T),
+                                         sd= sd(var, na.rm = T))
+  
+  
+  out<- cbind(full.summary, plot.data, summary_loop)
   mod_out_MCsymptoms <- rbind(mod_out_MCsymptoms, out)
   
   rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
-     plot.data.max, plot.data.min, out) }
+     plot.data.max, plot.data.min, out, summary_loop) }
 
-write.csv(mod_out_fastingDur,
+write.csv(mod_out_MCsymptoms,
           'P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_MCexcluded.csv')
 ```
 
 
-#plots
+# Plot output
 ``` {r}
 metabolites <- rbind(plot.data_n_30740_0_0, plot.data_TG_0, plot.data_TG_0, plot.data_TC.HDL, plot.data_ldl_0, plot.data_HDL_0, plot.data_tyG.index2)
 
@@ -185,5 +218,12 @@ plot.metabolites <- ggplot(data =plot.dat.metabolites)+
   facet_wrap(~Variable, scales = 'free_y')
 
 plot.metabolites
-#save at 8 x 8
+ggsave(plot.metabolites,
+       filename= "P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_simple_plot.pdf", 
+       height= 4,
+       width= 8)
+```
+
+``` {r}
+sessionInfo()
 ```

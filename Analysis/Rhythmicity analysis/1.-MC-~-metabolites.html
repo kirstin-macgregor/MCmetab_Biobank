@@ -13,11 +13,7 @@
 
 <meta name="date" content="2022-08-26" />
 
-<<<<<<< HEAD
-<title>MC ~ metabolite + mediator</title>
-=======
-<title>Association between menstrual cycle and metabolite: Mediator analysis</title>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
+<title>MC ~ metabolites</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -354,38 +350,24 @@ display: none;
 
 
 
-<<<<<<< HEAD
-<h1 class="title toc-ignore">MC ~ metabolite + mediator</h1>
-=======
-<h1 class="title toc-ignore">Association between menstrual cycle and
-metabolite: Mediator analysis</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
+<h1 class="title toc-ignore">MC ~ metabolites</h1>
 <h4 class="author">Kirstin MacGregor</h4>
 <h4 class="date">2022-08-26</h4>
 
 </div>
 
 
-<<<<<<< HEAD
-<p>#set up data and arange</p>
-=======
-<div id="background" class="section level1">
-<h1>Background</h1>
+<p>#Background</p>
 <ul>
-<li>To investigate whether the associations between menstrual cycle
-phase and metabolites were mediated by anthropometric, physical activity
-or fitness variables, GAM models fitted with a cyclic cubic regression
-spline were run that included each varioable as a continuous
-covariate.</li>
-<li>To test whether the inclusion of the covariate improved model fit,
-an F-test was conducted.</li>
+<li>To test the association between menstrual cycle phase and
+metabolites, additive models were fitted with a cyclic cubic regression
+spline.</li>
+<li>The output is plotted as a line graph with upper and lower CI for
+each metabolite and moderator varaible.</li>
 </ul>
-</div>
 <div id="set-up-data-and-arrange" class="section level1">
 <h1>Set up data and arrange</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-<pre class="r"><code>setwd(&quot;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered&quot;)
-data &lt;- read.csv(&quot;filtered.data_20220627.csv&quot;)
+<pre class="r"><code>data &lt;- read.csv(&quot;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/filtered/filtered.data_20220627.csv&quot;)
 
 data &lt;- data %&gt;% transform(ethnicity_cat= as.factor(ethnicity_cat),
                            age= as.numeric(age),
@@ -393,35 +375,16 @@ data &lt;- data %&gt;% transform(ethnicity_cat= as.factor(ethnicity_cat),
                            n_22039_0_0= as.numeric(n_22039_0_0),
                            n_22037_0_0= as.numeric(n_22037_0_0),
                            MET.summed= as.numeric(MET.summed))</code></pre>
-<<<<<<< HEAD
-<p>#variables for loop</p>
-=======
+<p>#set up loop:</p>
+<pre class="r"><code>variables&lt;- c(&#39;n_30740_0_0&#39;, &#39;Tchol_0&#39;, &#39;TG_0&#39;, &#39;ldl_0&#39;, &#39;HDL_0&#39;, &#39;TC.HDL&#39;, &#39;tyG.index2&#39;, &#39;weight_kg&#39;, &#39;height&#39;, &#39;bmi&#39;, &#39;bodyfat_kg&#39;, &#39;bodyfatfreemass&#39;, &#39;SMusclemasspct_c&#39;, &#39;bodyfat_p&#39;, &#39;n_30800_0_0&#39;, &#39;n_30770_0_0&#39;, &#39;CRP_0&#39;, &#39;n_22038_0_0&#39;, &#39;HbA1c_0&#39;, &#39;n_22039_0_0&#39;, &#39;n_22037_0_0&#39;, &#39;MET.summed&#39;, &#39;handgripkg&#39;, &#39;Fitness_METs_c&#39;)</code></pre>
 </div>
-<div id="set-up-variables-for-loop" class="section level1">
-<h1>Set up variables for loop</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-<pre class="r"><code>metabolite_loop &lt;- c(&#39;n_30740_0_0&#39;, &#39;Tchol_0&#39;, &#39;TG_0&#39;, &#39;ldl_0&#39;, &#39;HDL_0&#39;, &#39;TC.HDL&#39;, &#39;tyG.index2&#39;)
-mediators_loop &lt;- c(&#39;CRP_0&#39;, &#39;n_30800_0_0&#39;, &#39;bmi&#39;, &#39;bodyfat_p&#39;, &#39;SMusclemasspct_c&#39;, &#39;MET.summed&#39;, &#39;handgripkg&#39;, &#39;Fitness_METs_c&#39;)
-
-interaction_fun &lt;- function(x) { anova(x$mod1, x$mod2, test=&#39;F&#39;) }</code></pre>
-<<<<<<< HEAD
-=======
-</div>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
 <div id="simple-model" class="section level1">
 <h1>Simple model</h1>
-<pre class="r"><code>mod_out_simple &lt;- data.frame(matrix(ncol =22, nrow = 0))
-interaction_loop &lt;- list()
-interaction_names &lt;- c()
-interaction_out_simple &lt;- setNames(data.frame(matrix(ncol =3, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
+<pre class="r"><code>mod_out_simple &lt;- data.frame(matrix(ncol =24, nrow = 0))
 
-for (i in metabolite_loop) {
+for (i in variables) {
   data_loop &lt;- rename(data, var= i)
-  
-  for (j in mediators_loop) {
-  data_loop_2 &lt;- rename(data_loop, covar=j)
-  
-  mod1 &lt;- gam(var~  s(MC.status, bs=&quot;cc&quot;) + ethnicity_cat + s(age) + s(deprivationindex) + s(covar), data=data_loop_2)
+  mod1 &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=data_loop)
   summary &lt;- summary(mod1) #summary of model
   s.summary &lt;- as_tibble(summary$s.table)
   nval.summary &lt;- as_tibble(summary$n)
@@ -429,45 +392,37 @@ for (i in metabolite_loop) {
   MC.summary &lt;- s.summary[1,]
   full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
   colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
-  full.summary &lt;- full.summary %&gt;% dplyr::mutate(Variable= paste(i), mediator = paste(j))
+  full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i))
   
-  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
-  dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(covar)
-  mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
-  temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;covar&quot; = j))
-  names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
-  interaction_loop&lt;- append(interaction_loop, temp_loop)
-  interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
-  
-  a &lt;- plot_smooths(model= mod1, series= MC.status)
-  plot.data &lt;- a[[&#39;data&#39;]]
+  a &lt;- plot_smooths(mod1, series=&#39;MC.status&#39;)
+  plot.data &lt;- a[[1]]
   plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
+  plot.data2 &lt;- plot.data %&gt;%  mutate(Variable= paste(i))
+  assign(paste(&#39;plot.data_&#39;, i, sep=&#39;&#39;), plot.data2)
   max.val &lt;- max(plot.data$var)
   min.val &lt;- min(plot.data$var)
   plot.data.max &lt;- plot.data %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.min &lt;- plot.data %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
-<<<<<<< HEAD
-  plot.data &lt;- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) &lt;- c( &#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;)
-=======
   plot.data.ef &lt;- plot.data %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.ov &lt;- plot.data %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.ml &lt;- plot.data %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+  plot.data &lt;- cbind(plot.data.min, plot.data.max, plot.data.ef, plot.data.ov, plot.data.ml)
   colnames(plot.data) &lt;- c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
                                &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
                                &#39;ef.idx&#39;, &#39;ef.ethnicity&#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.SE&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
                                &#39;ov.idx&#39;, &#39;ov.ethnicity&#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.SE&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
                                &#39;ml.idx&#39;, &#39;ml.ethnicity&#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.SE&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
   
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-  out&lt;- cbind(full.summary, plot.data)
+  summary_loop &lt;- data_loop |&gt; summarise(mean= mean(var, na.rm = T),
+                                         sd= sd(var, na.rm = T))
   
+  
+  out&lt;- cbind(full.summary, plot.data, summary_loop)
+
   mod_out_simple &lt;- rbind(mod_out_simple, out)
   
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out,
-     temp_loop) }  }</code></pre>
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
+     plot.data.max, plot.data.min, out, summary_loop) }</code></pre>
 <pre><code>## Warning: Using an external vector in selections was deprecated in tidyselect 1.1.0.
 ## ℹ Please use `all_of()` or `any_of()` instead.
 ##   # Was:
@@ -480,60 +435,16 @@ for (i in metabolite_loop) {
 ## This warning is displayed once every 8 hours.
 ## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
 ## generated.</code></pre>
-<pre><code>## Warning: Using an external vector in selections was deprecated in tidyselect 1.1.0.
-## ℹ Please use `all_of()` or `any_of()` instead.
-##   # Was:
-##   data %&gt;% select(j)
-## 
-##   # Now:
-##   data %&gt;% select(all_of(j))
-## 
-## See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.
-## This warning is displayed once every 8 hours.
-## Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
-## generated.</code></pre>
-<pre class="r"><code>#interaction test output
-  interaction_out &lt;- lapply(interaction_loop, interaction_fun)
-  
-  for (i in interaction_names) {
-    temp &lt;- interaction_out[[i]]
-    F &lt;- temp$F
-    pval &lt;- temp$`Pr(&gt;F)`
-    out &lt;- cbind(F, pval)
-    out &lt;- out[2,]
-    out &lt;- out %&gt;% as.data.frame() %&gt;% t()
-    out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
-    interaction_out_simple &lt;- rbind(interaction_out_simple, out)
-    rm(out, pval, F, temp) } 
-
-mod_out_simple &lt;- mod_out_simple %&gt;% mutate(Condition= paste(Variable, mediator, sep=&#39;_&#39;)) %&gt;% 
-  left_join(interaction_out_simple, by= &#39;Condition&#39;) %&gt;%
-  select(-c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.SE&#39;, &#39;min.CI_lower&#39;, &#39;min.CI_upper&#39;, 
-            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.SE&#39;, &#39;max.CI_lower&#39;, &#39;max.CI_upper&#39;, &#39;Condition&#39;))
-
-rm(interaction_out_simple, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
-
-write.csv(mod_out_simple,
-&#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_simple.csv&#39;)</code></pre>
-<<<<<<< HEAD
-<p>#2. Fasting duration adjusted</p>
-=======
+<pre class="r"><code>write.csv(mod_out_simple,
+          &#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_simple.csv&#39;)</code></pre>
 </div>
 <div id="adjusting-for-fasting-duration" class="section level1">
 <h1>Adjusting for fasting duration</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-<pre class="r"><code>mod_out_fasted &lt;- data.frame(matrix(ncol =22, nrow = 0))
-interaction_loop &lt;- list()
-interaction_names &lt;- c()
-interaction_out_fasted &lt;- setNames(data.frame(matrix(ncol =3, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
+<pre class="r"><code>mod_out_fastingDur &lt;- data.frame(matrix(ncol =24, nrow = 0))
 
-for (i in metabolite_loop) {
+for (i in variables) {
   data_loop &lt;- rename(data, var= i)
-  
-  for (j in mediators_loop) {
-  data_loop_2 &lt;- rename(data_loop, covar=j)
-  
-  mod1 &lt;- gam(var~  s(MC.status, bs=&quot;cc&quot;) + ethnicity_cat + s(age) + s(deprivationindex) + s(covar) + s(n_74_0_0), data=data_loop_2)
+  mod1 &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex) + s(n_74_0_0), data=data_loop)
   summary &lt;- summary(mod1) #summary of model
   s.summary &lt;- as_tibble(summary$s.table)
   nval.summary &lt;- as_tibble(summary$n)
@@ -541,94 +452,49 @@ for (i in metabolite_loop) {
   MC.summary &lt;- s.summary[1,]
   full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
   colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
-  full.summary &lt;- full.summary %&gt;% dplyr::mutate(Variable= paste(i), mediator = paste(j))
-
-  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
-  dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(covar)
-  mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
-  temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;covar&quot; = j))
-  names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
-  interaction_loop&lt;- append(interaction_loop, temp_loop)
-  interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
-    
-  a &lt;- plot_smooths(model= mod1, series= MC.status)
-  plot.data &lt;- a[[&#39;data&#39;]]
+  full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i))
+  
+  a&lt;- plot_smooths(mod1, series=&#39;MC.status&#39;)
+  plot.data &lt;- a[[1]]
   plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
   max.val &lt;- max(plot.data$var)
   min.val &lt;- min(plot.data$var)
   plot.data.max &lt;- plot.data %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.min &lt;- plot.data %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
-<<<<<<< HEAD
-  plot.data &lt;- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) &lt;- c( &#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;)
-=======
-   plot.data.ef &lt;- plot.data %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
+  plot.data.ef &lt;- plot.data %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.ov &lt;- plot.data %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.ml &lt;- plot.data %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+  plot.data &lt;- cbind(plot.data.min, plot.data.max, plot.data.ef, plot.data.ov, plot.data.ml)
   colnames(plot.data) &lt;- c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
                                &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
                                &#39;ef.idx&#39;, &#39;ef.ethnicity&#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.SE&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
                                &#39;ov.idx&#39;, &#39;ov.ethnicity&#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.SE&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
                                &#39;ml.idx&#39;, &#39;ml.ethnicity&#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.SE&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-  out&lt;- cbind(full.summary, plot.data)
   
-  mod_out_fasted &lt;- rbind(mod_out_fasted, out) 
+  summary_loop &lt;- data_loop |&gt; summarise(mean= mean(var, na.rm = T),
+                                         sd= sd(var, na.rm = T))
   
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out, temp_loop) } }
-
-#interaction test output
-  interaction_out &lt;- lapply(interaction_loop, interaction_fun)
+  out&lt;- cbind(full.summary, plot.data, summary_loop)
+  mod_out_fastingDur &lt;- rbind(mod_out_fastingDur, out)
   
-  for (i in interaction_names) {
-    temp &lt;- interaction_out[[i]]
-    F &lt;- temp$F
-    pval &lt;- temp$`Pr(&gt;F)`
-    out &lt;- cbind(F, pval)
-    out &lt;- out[2,]
-    out &lt;- out %&gt;% as.data.frame() %&gt;% t()
-    out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
-    interaction_out_fasted &lt;- rbind(interaction_out_fasted, out)
-    rm(out, pval, F, temp) } 
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, 
+     plot.data.max, plot.data.min, out, summary_loop) }
 
-mod_out_fasted &lt;- mod_out_fasted %&gt;% mutate(Condition= paste(Variable, mediator, sep=&#39;_&#39;)) %&gt;% 
-  left_join(interaction_out_fasted, by= &#39;Condition&#39;) %&gt;%
-  select(-c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.SE&#39;, &#39;min.CI_lower&#39;, &#39;min.CI_upper&#39;, 
-            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.SE&#39;, &#39;max.CI_lower&#39;, &#39;max.CI_upper&#39;, &#39;Condition&#39;))
-
-rm(interaction_out_fasted, temp, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)</code></pre>
-<pre><code>## Warning in rm(interaction_out_fasted, temp, data_loop, data_loop_2,
-## interaction_out, : object &#39;temp&#39; not found</code></pre>
-<pre class="r"><code>write.csv(mod_out_fasted,
-&#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_fastingDur.csv&#39;)</code></pre>
-<<<<<<< HEAD
-<p>#3. excluding women with menstrual cycle symptoms</p>
-=======
+write.csv(mod_out_fastingDur, &#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_fastingDur.csv&#39;)</code></pre>
 </div>
 <div id="excluding-women-with-menstrual-cycle-symptoms" class="section level1">
 <h1>Excluding women with menstrual cycle symptoms</h1>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
 <pre class="r"><code>data.n_21050_0_0 &lt;- data %&gt;% filter(n_21050_0_0 == &quot;-601&quot; | n_21050_0_0 == &quot;-602&quot;)
 data.n_21026_0_0 &lt;- data %&gt;% filter(n_21026_0_0 == &quot;1&quot;)
 Data.MCsymptoms &lt;- rbind(data.n_21050_0_0, data.n_21026_0_0)
 data_MC &lt;- anti_join(data, Data.MCsymptoms, by = &#39;eid&#39;)
-rm(data.n_21050_0_0, data.n_21026_0_0, Data.MCsymptoms)
 
-mod_out_MCsymptoms &lt;- data.frame(matrix(ncol =22, nrow = 0))
-
-interaction_loop &lt;- list()
-interaction_names &lt;- c()
-interaction_out_MC &lt;- setNames(data.frame(matrix(ncol =3, nrow = 0)), c(&#39;Fval&#39;, &#39;Pval&#39;, &#39;condition&#39;))
-
-for (i in metabolite_loop) {
+mod_out_MCsymptoms &lt;- data.frame(matrix(ncol =4, nrow = 0))
+i = &quot;n_30740_0_0&quot;
+for (i in variables) {
   data_loop &lt;- rename(data_MC, var= i)
   
-  for (j in mediators_loop) {
-  data_loop_2 &lt;- rename(data_loop, covar=j)
-  
-  mod1 &lt;- gam(var~  s(MC.status, bs=&quot;cc&quot;) + ethnicity_cat + s(age) + s(deprivationindex) + s(covar), data=data_loop_2)
+  mod1 &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=data_loop)
   summary &lt;- summary(mod1) #summary of model
   s.summary &lt;- as_tibble(summary$s.table)
   nval.summary &lt;- as_tibble(summary$n)
@@ -636,179 +502,72 @@ for (i in metabolite_loop) {
   MC.summary &lt;- s.summary[1,]
   full.summary &lt;- cbind(nval.summary, dev.summary, MC.summary)
   colnames(full.summary) &lt;- c( &#39;N val&#39;, &#39;Dev exp&#39;, &#39;MC.EDF&#39;, &#39;MC.Ref.df&#39;, &#39;MC.F&#39;, &#39;MC.pval&#39;)
-  full.summary &lt;- full.summary %&gt;% dplyr::mutate(Variable= paste(i), mediator = paste(j))
-
-  #set up simple model with same number of observations (required for comparing models with ´anova´) and save into list with subgroup model for later
-  dat_loop_comp &lt;- data_loop_2 %&gt;% drop_na(covar)
-  mod.simple &lt;- gam(var~ ethnicity_cat + s(MC.status, bs=&quot;cc&quot;) + s(age) + s(deprivationindex), data=dat_loop_comp) 
-  temp_loop &lt;- list(temp = list(&quot;mod1&quot; = mod1, &quot;mod2&quot; = mod.simple, &quot;var&quot; = i, &quot;covar&quot; = j))
-  names(temp_loop)[1] &lt;- paste(i, j, sep=&#39;_&#39;)
-  interaction_loop&lt;- append(interaction_loop, temp_loop)
-  interaction_names &lt;- append(interaction_names, paste(i, j, sep=&#39;_&#39;))
+  full.summary &lt;- full.summary %&gt;% mutate(Variable= paste(i))
   
-  a &lt;- plot_smooths(model= mod1, series= MC.status)
-  plot.data &lt;- a[[&#39;data&#39;]]
+  a &lt;- plot_smooths(mod1, series=&#39;MC.status&#39;)
+  plot.data &lt;- a[[1]]
   plot.data &lt;- plot.data %&gt;% filter(ethnicity_cat== 1)
   max.val &lt;- max(plot.data$var)
   min.val &lt;- min(plot.data$var)
   plot.data.max &lt;- plot.data %&gt;% filter(var == max.val) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.min &lt;- plot.data %&gt;% filter(var == min.val) %&gt;% distinct(var, .keep_all= TRUE)
-<<<<<<< HEAD
-  plot.data &lt;- cbind(plot.data.min, plot.data.max)
-  colnames(plot.data) &lt;- c( &#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
-                            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;)
-=======
   plot.data.ef &lt;- plot.data %&gt;% filter(abs(MC.status - 0.06) == min(abs(MC.status - 0.06))) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.ov &lt;- plot.data %&gt;% filter(abs(MC.status - 0.54) == min(abs(MC.status - 0.54))) %&gt;% distinct(var, .keep_all= TRUE)
   plot.data.ml &lt;- plot.data %&gt;% filter(abs(MC.status - 0.76) == min(abs(MC.status - 0.76))) %&gt;% distinct(var, .keep_all= TRUE)
-  plot.data &lt;- cbind(plot.data.min, plot.data.max,plot.data.ef, plot.data.ov, plot.data.ml)
+  plot.data &lt;- cbind(plot.data.min, plot.data.max, plot.data.ef, plot.data.ov, plot.data.ml)
   colnames(plot.data) &lt;- c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.MC.status&#39;, &#39;min.outcomevar&#39;, &#39;min.SE&#39;, &#39;min.CI_upper&#39;, &#39;min.CI_lower&#39;,
                                &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.MC.status&#39;, &#39;max.outcomevar&#39;, &#39;max.SE&#39;, &#39;max.CI_upper&#39;, &#39;max.CI_lower&#39;,
                                &#39;ef.idx&#39;, &#39;ef.ethnicity&#39;, &#39;ef.MC.status&#39;, &#39;ef.outcomevar&#39;, &#39;ef.SE&#39;, &#39;ef.CI_upper&#39;, &#39;ef.CI_lower&#39;,
                                &#39;ov.idx&#39;, &#39;ov.ethnicity&#39;, &#39;ov.MC.status&#39;, &#39;ov.outcomevar&#39;, &#39;ov.SE&#39;, &#39;ov.CI_upper&#39;, &#39;ov.CI_lower&#39;,
                                &#39;ml.idx&#39;, &#39;ml.ethnicity&#39;, &#39;ml.MC.status&#39;, &#39;ml.outcomevar&#39;, &#39;ml.SE&#39;, &#39;ml.CI_upper&#39;, &#39;ml.CI_lower&#39;)
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
-  out&lt;- cbind(full.summary, plot.data)
   
-  mod_out_MCsymptoms &lt;- rbind(mod_out_MCsymptoms, out) 
+  summary_loop &lt;- data_loop |&gt; summarise(mean= mean(var, na.rm = T),
+                                         sd= sd(var, na.rm = T))
   
-  rm(mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val, plot.data.max, plot.data.min, out, temp_loop) } }
-
-#interaction test output
-  interaction_out &lt;- lapply(interaction_loop, interaction_fun)
   
-  for (i in interaction_names) {
-    temp &lt;- interaction_out[[i]]
-    F &lt;- temp$F
-    pval &lt;- temp$`Pr(&gt;F)`
-    out &lt;- cbind(F, pval)
-    out &lt;- out[2,]
-    out &lt;- out %&gt;% as.data.frame() %&gt;% t()
-    out &lt;- out %&gt;% as.data.frame() %&gt;% mutate(Condition = paste(i)) %&gt;% rename(interaction.F= F, interaction.pValue = pval)
-    interaction_out_MC &lt;- rbind(interaction_out_MC, out)
-    rm(out, pval, F, temp, out) } </code></pre>
-<pre><code>## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found
-
-## Warning in rm(out, pval, F, temp, out): object &#39;out&#39; not found</code></pre>
-<pre class="r"><code>mod_out_MCsymptoms &lt;- mod_out_MCsymptoms %&gt;% mutate(Condition= paste(Variable, mediator, sep=&#39;_&#39;)) %&gt;% 
-  left_join(interaction_out_MC, by= &#39;Condition&#39;) %&gt;%
-  select(-c(&#39;min.idx&#39;, &#39;min.ethnicity&#39;, &#39;min.SE&#39;, &#39;min.CI_lower&#39;, &#39;min.CI_upper&#39;, 
-            &#39;max.idx&#39;, &#39;max.ethnicity&#39;, &#39;max.SE&#39;, &#39;max.CI_lower&#39;, &#39;max.CI_upper&#39;, &#39;Condition&#39;))
-
-rm(interaction_out_MC, data_loop, data_loop_2, interaction_out, interaction_loop, mod.simple, i, j)
+  out&lt;- cbind(full.summary, plot.data, summary_loop)
+  mod_out_MCsymptoms &lt;- rbind(mod_out_MCsymptoms, out)
+  
+  rm(data_loop, mod1, summary, s.summary, nval.summary, dev.summary, MC.summary, full.summary, a, plot.data, max.val, min.val,
+     plot.data.max, plot.data.min, out, summary_loop) }
 
 write.csv(mod_out_MCsymptoms,
-&#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Mediator/MC~metab+mediator_MCexcluded.csv&#39;)</code></pre>
-<<<<<<< HEAD
-=======
+          &#39;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_MCexcluded.csv&#39;)</code></pre>
+</div>
+<div id="plot-output" class="section level1">
+<h1>Plot output</h1>
+<pre class="r"><code>metabolites &lt;- rbind(plot.data_n_30740_0_0, plot.data_TG_0, plot.data_TG_0, plot.data_TC.HDL, plot.data_ldl_0, plot.data_HDL_0, plot.data_tyG.index2)
+
+plot.dat.metabolites &lt;- metabolites %&gt;%  mutate(Variable = replace(Variable, Variable==&quot;n_30740_0_0&quot;, &quot;Glucose&quot;),
+                                       Variable = replace(Variable, Variable==&quot;Tchol_0&quot;, &quot;Total cholesterol&quot;),
+                                       Variable = replace(Variable, Variable==&quot;TG_0&quot;, &quot;Triglcyeride&quot;),
+                                       Variable = replace(Variable, Variable==&quot;ldl_0&quot;, &quot;LDL&quot;),
+                                       Variable = replace(Variable, Variable==&quot;HDL_0&quot;, &quot;HDL&quot;),
+                                       Variable = replace(Variable, Variable==&quot;TC.HDL&quot;, &quot;Total:HDL cholesterol&quot;),
+                                       Variable = replace(Variable, Variable==&quot;tyG.index2&quot;, &quot;TyG index&quot;))
+
+plot.dat.metabolites$Variable &lt;- factor(plot.dat.metabolites$Variable, levels= c(&quot;Glucose&quot;, &quot;Triglcyeride&quot;, &quot;TyG index&quot;, &quot;Total cholesterol&quot;, &quot;LDL&quot;, &quot;HDL&quot;,
+                                                                                 &quot;Total:HDL cholesterol&quot;))
+
+plot.metabolites &lt;- ggplot(data =plot.dat.metabolites)+
+  geom_ribbon(aes(x=MC.status, ymin = CI_lower, ymax = CI_upper, fill=&quot;#39568CFF&quot;),alpha = 0.5)+
+  scale_fill_manual(values = c(&quot;#39568CFF&quot;))+
+  geom_line(aes(y=var, x=MC.status))+
+  theme(axis.line = element_line(colour = &quot;black&quot;),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        axis.title.x =element_blank(),
+        legend.position = &#39;none&#39;)+
+  facet_wrap(~Variable, scales = &#39;free_y&#39;)
+
+plot.metabolites</code></pre>
+<p><img src="data:image/png;base64,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" width="672" /></p>
+<pre class="r"><code>ggsave(plot.metabolites,
+       filename= &quot;P:/C3_Integrative_Physiology_Group/PeoplesData/Kirstin/Projects/UoS/MC and metabolites_BioBank/Analysis/data/out/Rhythmicity analysis/Simple/MC~metab_simple_plot.pdf&quot;, 
+       height= 4,
+       width= 8)</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 4.3.1 (2023-06-16 ucrt)
 ## Platform: x86_64-w64-mingw32/x64 (64-bit)
@@ -829,28 +588,26 @@ write.csv(mod_out_MCsymptoms,
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] ggpubr_0.6.0      viridis_0.6.4     viridisLite_0.4.2 tidymv_3.4.2     
-##  [5] mgcv_1.8-42       nlme_3.1-162      lme4_1.1-34       Matrix_1.6-0     
-##  [9] lubridate_1.9.2   forcats_1.0.0     stringr_1.5.0     dplyr_1.1.2      
-## [13] purrr_1.0.1       readr_2.1.4       tidyr_1.3.0       tibble_3.2.1     
-## [17] ggplot2_3.4.2     tidyverse_2.0.0  
+##  [1] tidymv_3.4.2    mgcv_1.8-42     nlme_3.1-162    lme4_1.1-34    
+##  [5] Matrix_1.6-0    lubridate_1.9.2 forcats_1.0.0   stringr_1.5.0  
+##  [9] dplyr_1.1.2     purrr_1.0.1     readr_2.1.4     tidyr_1.3.0    
+## [13] tibble_3.2.1    ggplot2_3.4.2   tidyverse_2.0.0
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] sass_0.4.7        utf8_1.2.3        generics_0.1.3    rstatix_0.7.2    
-##  [5] stringi_1.7.12    lattice_0.21-8    hms_1.1.3         digest_0.6.33    
-##  [9] magrittr_2.0.3    evaluate_0.21     grid_4.3.1        timechange_0.2.0 
-## [13] fastmap_1.1.1     jsonlite_1.8.7    backports_1.4.1   gridExtra_2.3    
-## [17] fansi_1.0.4       scales_1.2.1      jquerylib_0.1.4   abind_1.4-5      
-## [21] cli_3.6.1         crayon_1.5.2      rlang_1.1.1       munsell_0.5.0    
-## [25] splines_4.3.1     withr_2.5.0       cachem_1.0.8      yaml_2.3.7       
-## [29] tools_4.3.1       tzdb_0.4.0        ggsignif_0.6.4    nloptr_2.0.3     
-## [33] minqa_1.2.5       colorspace_2.1-0  boot_1.3-28.1     broom_1.0.5      
-## [37] vctrs_0.6.2       R6_2.5.1          lifecycle_1.0.3   car_3.1-2        
-## [41] MASS_7.3-60       pkgconfig_2.0.3   pillar_1.9.0      bslib_0.5.0      
-## [45] gtable_0.3.3      Rcpp_1.0.11       glue_1.6.2        xfun_0.39        
-## [49] tidyselect_1.2.0  rstudioapi_0.15.0 knitr_1.43        htmltools_0.5.5  
-## [53] carData_3.0-5     rmarkdown_2.23    compiler_4.3.1</code></pre>
->>>>>>> 1bc0fe7980afa5690aee905638b0304b384b89ae
+##  [1] sass_0.4.7        utf8_1.2.3        generics_0.1.3    stringi_1.7.12   
+##  [5] lattice_0.21-8    hms_1.1.3         digest_0.6.33     magrittr_2.0.3   
+##  [9] evaluate_0.21     grid_4.3.1        timechange_0.2.0  fastmap_1.1.1    
+## [13] jsonlite_1.8.7    fansi_1.0.4       scales_1.2.1      textshaping_0.3.6
+## [17] jquerylib_0.1.4   cli_3.6.1         crayon_1.5.2      rlang_1.1.1      
+## [21] munsell_0.5.0     splines_4.3.1     withr_2.5.0       cachem_1.0.8     
+## [25] yaml_2.3.7        tools_4.3.1       tzdb_0.4.0        nloptr_2.0.3     
+## [29] minqa_1.2.5       colorspace_2.1-0  boot_1.3-28.1     vctrs_0.6.2      
+## [33] R6_2.5.1          lifecycle_1.0.3   MASS_7.3-60       ragg_1.2.5       
+## [37] pkgconfig_2.0.3   pillar_1.9.0      bslib_0.5.0       gtable_0.3.3     
+## [41] Rcpp_1.0.11       glue_1.6.2        systemfonts_1.0.4 highr_0.10       
+## [45] xfun_0.39         tidyselect_1.2.0  rstudioapi_0.15.0 knitr_1.43       
+## [49] farver_2.1.1      htmltools_0.5.5   labeling_0.4.2    rmarkdown_2.23   
+## [53] compiler_4.3.1</code></pre>
 </div>
 
 
