@@ -110,6 +110,7 @@ lipid_characteristics_bar
 
 ## N and % in each category
 ```{r, message=FALSE, warnings = F}
+# CVD medication
 med_count_plot <- ggplot2::ggplot(data = data, ggplot2::aes(medicationCV)) +
   ggplot2::geom_bar() +
   ggplot2::ggtitle("#6177: Medication for cholesterol, blood pressure or diabetes") +
@@ -124,14 +125,16 @@ med_perc_plot <- ggplot2::ggplot(
     dplyr::mutate(perc = 100 * (n / sum(n))),
   ggplot2::aes(x = medicationCV, y = perc)
 ) +
-  ggplot2::geom_col() +
-  ggplot2::ggtitle(" ")+
+  ggplot2::geom_col()  +
+  ggplot2::ggtitle("#6177: Medication for 
+cholesterol, blood 
+pressure or diabetes") +
   ggplot2::ylab("count (%)") +
   ggplot2::theme_bw() +
-  ggplot2::geom_text(ggplot2::aes(label = paste(perc, " %")), vjust = 0)
+    ggplot2::ylim(c(0,110))+
+  ggplot2::geom_text(ggplot2::aes(label = paste(round(perc, 1), " %")), vjust = -0.5)
 
-med_plots <- ggpubr::ggarrange(med_count_plot, med_perc_plot)
-
+# Statins
 statin_count_plot <- ggplot2::ggplot(data = data, ggplot2::aes(statin)) +
   ggplot2::geom_bar() +
   ggplot2:::ggtitle("Statin") +
@@ -148,16 +151,18 @@ statin_perc_plot <-
     ggplot2::aes(x = statin, y = perc)
   ) +
   ggplot2::geom_col() +
-  ggplot2:::ggtitle(" ") +
+  ggplot2:::ggtitle("Statin
+                    
+                    ") +
+    ggplot2::ylim(c(0,110))+
   ggplot2::ylab("count (%)") +
   ggplot2::theme_bw() +
-  ggplot2::geom_text(ggplot2::aes(label = paste(round(perc, 1), " %")), vjust = 0)
+  ggplot2::geom_text(ggplot2::aes(label = paste(round(perc, 1), " %")), vjust = -0.5)
 
-statin_plots <- ggpubr::ggarrange(statin_count_plot, statin_perc_plot)
-
+# CV meds
 CVmeds_count_plot <- ggplot2::ggplot(data = data, ggplot2::aes(CVmeds)) +
   ggplot2::geom_bar() +
-  ggplot2:::ggtitle("CV medication") +
+  ggplot2:::ggtitle("Cardiovascular disease medication") +
   ggplot2::ylab("count (%)") +
   ggplot2::theme_bw() +
   ggplot2::geom_text(stat = "count", ggplot2::aes(label = ggplot2::after_stat(count)), vjust = 0)
@@ -169,21 +174,20 @@ CVmeds_perc_plot <- ggplot2::ggplot(
     dplyr::mutate(perc = 100 * (n / sum(n))),
   ggplot2::aes(x = CVmeds, y = perc)
 ) +
-  ggplot2::geom_col() +
-  ggplot2:::ggtitle(" ") +
-  ggplot2::scale_y_continuous(labels = scales::percent) +
+  ggplot2::geom_col()+
+  ggplot2:::ggtitle("Cardiovascular disease 
+medication
+") + 
+  ggplot2::ylim(c(0,110))+
   ggplot2::ylab("count (%)") +
   ggplot2::theme_bw() +
-  ggplot2::geom_text(ggplot2::aes(label = paste(round(perc, 1), " %")), vjust = 0)
-
-CVmeds_plots <- ggpubr::ggarrange(CVmeds_count_plot, CVmeds_perc_plot)
+  ggplot2::geom_text(ggplot2::aes(label = paste(round(perc, 1), " %")), vjust = -0.5)
 ```
 
 ## Plots out 
 ```{r}
-med_plots
-statin_plots
-CVmeds_plots
+ggpubr::ggarrange(med_count_plot, statin_count_plot, CVmeds_count_plot, ncol=3)
+ggpubr::ggarrange(med_perc_plot, statin_perc_plot, CVmeds_perc_plot, ncol = 3)
 ```
 
 # Session info
